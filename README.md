@@ -1,152 +1,100 @@
 # Neptune 3 Maxout Configs
 
-Klipper upgrade packages for the Elegoo Neptune 3 series, built and maintained
-by **HDR Performance**. These packages organize the printer configuration,
-integrate KAMP, add guided maintenance and filament workflows, and support the
-BTT Pad 7 accelerometer for input-shaper calibration.
+Klipper upgrade packages for the Elegoo Neptune 3, Neptune 3 Pro, Neptune 3 Plus, and Neptune 3 Max, built and maintained by **HDR Performance**.
 
-> [!WARNING]
-> Download only the package matching your exact printer model. The standard,
-> Pro, Plus, and Max use different motion limits, probes, homing positions,
-> meshes, fan pins, and bed geometry. Installing the wrong `printer.cfg` can
-> cause unsafe movement or heater behavior.
+This repository consolidates the working packages and guides previously spread across:
 
-## Download the correct package
+- [Neptune Maxout — SKR 3 EZ with TMC5160 Pro drivers](https://github.com/HDR-Performance/Neptune-Maxout-SKR-3-EZ-with-TMC5160-Pro-Drivers)
+- [Neptune 3 Max — BIGTREETECH Pad 7](https://github.com/HDR-Performance/Neptune-3-Max-bigtreetech-pad-7-)
 
-| Printer | Package | Important model-specific behavior |
+The older wiring, firmware, KAMP, slicer, Moonraker, troubleshooting, and motor-upgrade information has been preserved where useful and corrected where board limits or current Klipper behavior required it.
+
+> [!CAUTION]
+> Download only the package matching both the printer model and controller. Robin Nano and SKR 3 EZ configurations are not interchangeable. Installing the wrong `printer.cfg`, wiring a connector by shape alone, or exceeding a heater output's current rating can damage hardware or cause uncontrolled motion/heating.
+
+## Choose the controller family
+
+### Stock Robin Nano + BTT Pad 7
+
+These packages retain each model's supplied working Robin Nano hardware mapping and add the organized HDR macro/KAMP feature suite.
+
+| Printer | Download |
+|---|---|
+| Neptune 3 | [Robin Nano package](Neptune3-HDR-Performance-Pad7-Complete-Guide.zip) |
+| Neptune 3 Pro | [Robin Nano package](Neptune3Pro-HDR-Performance-Pad7-Complete-Guide.zip) |
+| Neptune 3 Plus | [Robin Nano package](Neptune3Plus-HDR-Performance-Pad7-Complete-Guide.zip) |
+| Neptune 3 Max | [Robin Nano package](Neptune3Max-HDR-Performance-Pad7-Complete-Guide.zip) |
+
+### HDR Maxout — SKR 3 EZ + TMC5160 Pro EZ + BTT Pad 7
+
+These are full controller-conversion packages. The common baseline is four TMC5160 Pro EZ drivers, a 42×60 mm / 2.1 A Y motor, the original Y motor moved to X, both Z motors on one driver, and BTT Pad 7 input shaping.
+
+| Printer | Download | Status and important difference |
 |---|---|---|
-| Neptune 3 | [Download](Neptune3-HDR-Performance-Pad7-Complete-Guide.zip) | Strain-gauge probe with automatic tare; no unverified screw-tramming coordinates |
-| Neptune 3 Pro | [Download](Neptune3Pro-HDR-Performance-Pad7-Complete-Guide.zip) | Pro probe, mesh, homing position, and 235 mm XY motion envelope |
-| Neptune 3 Plus | [Download](Neptune3Plus-HDR-Performance-Pad7-Complete-Guide.zip) | Plus-sized geometry and guided six-screw bed tramming |
-| Neptune 3 Max | [Download](Neptune3Max-HDR-Performance-Pad7-Complete-Guide.zip) | Max-sized geometry, seven-point tramming workflow, and Max-specific homing |
+| Neptune 3 | [SKR Maxout package](Neptune3-SKR3EZ-TMC5160Pro-HDR-Performance.zip) | Engineering conversion; stock strain-gauge interface must be electrically verified at PC13 |
+| Neptune 3 Pro | [SKR Maxout package](Neptune3Pro-SKR3EZ-TMC5160Pro-HDR-Performance.zip) | Pro geometry, inductive probe through PC0, stock-hotend 250 °C limit |
+| Neptune 3 Plus | [SKR Maxout package](Neptune3Plus-SKR3EZ-TMC5160Pro-HDR-Performance.zip) | Plus geometry; verify bed current and use an external MOSFET when required |
+| Neptune 3 Max | [SKR Maxout package](Neptune3Max-SKR3EZ-TMC5160Pro-HDR-Performance.zip) | Consolidated working Max build; 0.4 mm CHT/FlowTech baseline and Max geometry |
 
-Every ZIP includes a model-specific **`START_HERE.md`**. Read that file before
-copying anything to the printer.
+Every ZIP contains `START_HERE.md`, a model-specific installation sequence, wiring and firmware instructions, slicer G-code, troubleshooting, feature documentation, and the complete organized `config/` tree.
 
-## Main features
+## What is included
 
-- Safe KAMP adaptive meshing, smart parking, and bounded purge movement
+- KAMP adaptive meshing, smart parking, and a bounded 100 mm/s purge-position move
 - BTT Pad 7 ADXL345 input-shaper calibration
-- Guided manual Z-offset calibration with nozzle cleaning
-- Filament load, unload, color-change, and runout recovery controls
-- Ten-minute unattended runout-pause hotend safety cooldown
-- Optional persistent bed heat soak before KAMP
+- Friendly manual Z-offset calibration with nozzle pre-cleaning
+- Filament load, unload, color change, and runout recovery
+- Ten-minute unattended runout hotend cooldown
+- Persistent optional bed heat soak before KAMP
 - Persistent PLA, PETG, and TPU pressure-advance profiles
-- Bed and nozzle PID-tuning controls with temperature validation
-- Print and maintenance counters
-- Model-specific bed-tramming support where verified coordinates are available
-- Organized `custom/` configuration folders instead of a crowded config root
+- Maintenance counters and guided PID tuning
+- Model-specific homing, mesh, motion envelope, and screw locations
+- Organized `custom/kamp`, `custom/macros`, and `custom/state` directories
 
-## Requirements
+## Corrected SKR 3 EZ details
 
-- The correct Elegoo Neptune 3-series model with a compatible Robin Nano board
-- A working Klipper, Moonraker, and Mainsail installation
-- BTT Pad 7 host MCU available at `/tmp/klipper_host_mcu`
-- Pad 7 ADXL345 available on `spidev1.1`
-- KAMP installed
-- Object processing enabled in `moonraker.conf`
-- **Label objects** enabled in OrcaSlicer or another compatible slicer
+- The SKR 3 may contain an STM32H723 or STM32H743. Inspect the physical chip and build for the exact processor with a 128 KiB bootloader, 25 MHz crystal, and USB on PA11/PA12.
+- PB9 is FDCAN transmit, not the overhead-light output. The packages use controlled FAN0/PB7 for the optional 24 V LED, FAN1/PB6 for part cooling, and FAN2/PB5 for the hotend fan.
+- `stealthchop_threshold: 999999` enables stealthChop for almost all movement. The Maxout packages use `0` for spreadCycle performance.
+- Klipper documents TMC current as RMS amps and discourages separate hold-current reductions. The old hold-current entries have been removed.
+- BIGTREETECH rates the SKR 3 heated-bed output at 10 A. Plus and Max installers must verify the actual bed load and use a correctly rated external MOSFET when necessary.
+- A harness is not assumed plug-and-play merely because its connector fits. Voltage, polarity, coil pairs, and pin order must be checked.
 
-Required Moonraker setting:
+## Quick install outline
 
-```ini
-[file_manager]
-enable_object_processing: True
-```
-
-## Quick installation
-
-1. Download a complete configuration backup from Mainsail.
-2. Download the ZIP matching the exact printer model.
-3. Extract it and read its `START_HERE.md`.
-4. Open the packaged `config/` folder.
-5. Upload the **contents** of that folder into the printer's active `/config`
-   directory.
-6. Replace only the files identified by the model-specific guide.
-7. Preserve host-service files such as `moonraker.conf`, `mainsail.cfg`,
-   `KlipperScreen.conf`, and the updater-managed `KAMP/` folder.
-8. Select **Save & Restart** in Mainsail.
-9. Stop immediately if Klipper reports a configuration error.
-
-## Recommended OrcaSlicer G-code
-
-Enable **Label objects** and use this machine start G-code:
-
-```gcode
-M117
-START_PRINT BED_TEMP=[bed_temperature_initial_layer_single] EXTRUDER_TEMP=[nozzle_temperature_initial_layer] MATERIAL=PETG
-```
-
-Change `MATERIAL` to `PLA`, `PETG`, or `TPU` as appropriate. Machine end
-G-code:
-
-```gcode
-END_PRINT
-```
-
-Remove slicer-generated homing, bed-mesh, and purge-line commands when they
-duplicate the `START_PRINT` workflow.
-
-## First startup checks
-
-Keep a hand near Emergency Stop during initial physical testing.
-
-1. Confirm the hotend and bed temperatures look reasonable at room temperature.
-2. Run `G28` and watch the entire model-specific homing sequence.
-3. Run `SMART_PARK` and verify that Z lifts before XY travel.
-4. Run `ACCELEROMETER_QUERY` and confirm live acceleration readings.
-5. Heat the nozzle and run `LINE_PURGE`; confirm it remains on the bed.
-6. Print a small center-bed model with heat soak disabled.
-
-## Input-shaper calibration
-
-Secure the BTT Pad 7 accelerometer firmly to the toolhead, clear the printer,
-and run:
-
-```gcode
-CALIBRATE_SHAPER
-```
-
-The macro homes the printer, tests both axes at the model-specific calibration
-point, saves the recommended values, and restarts Klipper. Never run it during
-a print.
+1. Back up all of `~/printer_data/config` and the existing SAVE_CONFIG values.
+2. Extract only the ZIP matching the printer and controller.
+3. Read `START_HERE.md` and, for SKR builds, `WIRING_AND_FIRMWARE.md` completely.
+4. Copy the **contents** of the packaged `config/` directory into `~/printer_data/config`, preserving its folders. Keep `printer.cfg` in the root.
+5. For SKR builds, replace `REPLACE_WITH_YOUR_SKR3_EZ_ID` with the exact result of `ls /dev/serial/by-id/`.
+6. Verify thermistors, endstops, TMC SPI, each motor direction, probe state, fans, and heaters before the first `G28`.
+7. Calibrate PID, Z offset, mesh, extrusion rotation distance, pressure advance, and input shaper.
+8. Put only the packaged `START_PRINT ...` and `END_PRINT` calls in the slicer.
 
 ## Common controls
 
 | Command | Purpose |
 |---|---|
-| `MANUAL_Z_OFFSET_ADJUST` | Clean the nozzle and open the Mainsail TESTZ workflow |
-| `MANUAL_BED_TRAMMING` | Probe verified screw locations on supported Plus and Max packages |
-| `SET_MATERIAL MATERIAL=PETG` | Select and persist a material profile |
-| `LOAD_FILAMENT` | Heat, load, purge, and optionally cool down |
-| `UNLOAD_FILAMENT` | Heat, form a tip, unload, and optionally cool down |
-| `M600` | Start a guided color change |
-| `RUNOUT_RESUME` | Complete runout or color-change recovery and resume |
-| `TOGGLE_HEAT_SOAK` | Toggle the persistent five-minute bed heat soak |
-| `HEAT_SOAK_STATUS` | Display the saved heat-soak state |
-| `G29` | Home and create a runtime adaptive mesh |
-| `M420` | Load the saved default mesh manually |
-| `BED_PID_TUNE TEMP=60` | Tune and save bed PID values |
-| `NOZZLE_PID_TUNE TEMP=230` | Tune and save hotend PID values |
-| `MAINTENANCE_STATUS` | Show completed-print and service counters |
+| `MANUAL_Z_OFFSET_ADJUST` | Clean the nozzle and open Klipper's TESTZ calibration controls |
+| `MANUAL_BED_TRAMMING` | Probe verified screw locations on supported models |
+| `ENABLE_HEAT_SOAK` / `DISABLE_HEAT_SOAK` | Persistently enable or disable the pre-KAMP soak |
+| `SET_MATERIAL MATERIAL=PETG` | Select a persistent material pressure-advance profile |
+| `LOAD_FILAMENT` / `UNLOAD_FILAMENT` | Guided filament handling |
+| `M600` / `RUNOUT_RESUME` | Color-change and runout recovery |
+| `CALIBRATE_SHAPER` | Calibrate both axes with the Pad 7 ADXL345 and save |
+| `BED_PID_TUNE TEMP=60` | Tune and save the bed PID |
+| `NOZZLE_PID_TUNE TEMP=230 FAN_SPEED=0` | Tune and save the hotend PID |
+| `MAINTENANCE_STATUS` | Show print and service counters |
 
-## Safety and support
+## Validation
 
-- Back up before installing or changing any configuration.
-- Do not move or heat the printer while Klipper reports an error.
-- Confirm the exact printer model and controller before copying `printer.cfg`.
-- Test one feature at a time before beginning a long print.
-- Configuration files are provided as community upgrades; the installer is
-  responsible for verifying wiring, hardware, and safe operation.
-
-For detailed installation, calibration, parameters, and recovery instructions,
-open `START_HERE.md` and `FEATURE_GUIDE.md` inside the downloaded package.
+All four SKR ZIPs were extracted after creation and checked for missing includes, duplicate Klipper sections, legacy hold-current/stealthChop values, MCU placeholders, required TMC sections, and accidental machine-specific SAVE_CONFIG blocks. Structural validation cannot replace electrical inspection or a controlled commissioning test on each physical printer.
 
 ## Credits
 
-Package integration, organized workflows, safety-focused macros, documentation,
-and Neptune 3-series upgrade work by **HDR Performance**.
+Package integration, Maxout hardware baseline, motor-upgrade workflow, feature design, guides, and project maintenance by **HDR Performance**.
 
-This project builds on [Klipper](https://www.klipper3d.org/) and
-[Klipper Adaptive Meshing & Purging](https://github.com/kyleisah/Klipper-Adaptive-Meshing-Purging).
-Those projects retain their respective authorship and licenses.
+This project builds on [Klipper](https://www.klipper3d.org/), [BIGTREETECH SKR 3](https://github.com/bigtreetech/SKR-3), and [Klipper Adaptive Meshing & Purging](https://github.com/kyleisah/Klipper-Adaptive-Meshing-Purging). Those projects retain their own authorship and licenses.
+
+These are community modification packages, not official Elegoo, BIGTREETECH, Klipper, Micro Swiss, Mainsail, or KAMP releases.
+
