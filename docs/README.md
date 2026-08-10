@@ -5,7 +5,9 @@ This documentation consolidates the useful material from the two original HDR Pe
 ## Start here
 
 1. [Choose the correct package](01-choose-the-correct-package.md)
-2. [Install a configuration package](02-install-a-package.md)
+2. Install with either method:
+   - [Easy SSH installer from GitHub](12-ssh-installer.md)
+   - [Manual configuration package installation](02-install-a-package.md)
 3. Read the firmware guide for your controller:
    - [Robin Nano firmware](03-robin-nano-firmware.md)
    - [SKR 3 EZ firmware and controller conversion](04-skr3ez-conversion.md)

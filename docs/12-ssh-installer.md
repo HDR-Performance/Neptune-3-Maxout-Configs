@@ -1,0 +1,137 @@
+# Easy SSH installation from GitHub
+
+The HDR Performance installer downloads the selected package directly from GitHub and preserves its complete directory structure. Users do not need to create `custom`, `macros`, `kamp`, or `state` folders manually in Mainsail.
+
+## What the installer does
+
+1. Shows a menu for all eight printer/controller packages.
+2. Downloads the selected portable ZIP from this repository.
+3. Verifies the published SHA-256 checksum and checks the ZIP before extraction.
+4. Creates a timestamped backup of the complete existing config.
+5. Replaces only the HDR-managed `printer.cfg`, `KAMP_Settings.cfg`, and `custom` tree.
+6. Preserves other host files such as `moonraker.conf`, `mainsail.cfg`, `crowsnest.conf`, and timelapse settings.
+7. Copies the package guides into `config/HDR_Documentation` for viewing in Mainsail.
+8. Offers to insert the SKR MCU serial when exactly one `/dev/serial/by-id/` device is detected.
+9. Does **not** restart Klipper automatically.
+10. Downloads a restore helper and prints the exact backup path.
+
+## Recommended installation
+
+SSH into the Pad 7 or Raspberry Pi:
+
+```text
+ssh biqu@PAD7_IP_ADDRESS
+```
+
+Download the installer:
+
+```text
+cd ~
+curl -fsSL https://raw.githubusercontent.com/HDR-Performance/Neptune-3-Maxout-Configs/main/install.sh -o hdr-neptune-install.sh
+```
+
+Review it before running:
+
+```text
+less hdr-neptune-install.sh
+```
+
+Run the interactive menu:
+
+```text
+chmod +x hdr-neptune-install.sh
+./hdr-neptune-install.sh
+```
+
+Select the exact printer model and controller, then type `INSTALL` when the summary is correct.
+
+> [!WARNING]
+> Robin Nano and SKR 3 EZ packages are not interchangeable. The installer cannot electrically verify wiring, probe voltage, thermistor type, heater load, motor direction, or the physical MCU.
+
+## Test without changing files
+
+Use dry-run mode to verify downloading and extraction:
+
+```text
+./hdr-neptune-install.sh --package neptune3max-skr3ez --dry-run --yes
+```
+
+Package IDs:
+
+```text
+neptune3-robin
+neptune3pro-robin
+neptune3plus-robin
+neptune3max-robin
+neptune3-skr3ez
+neptune3pro-skr3ez
+neptune3plus-skr3ez
+neptune3max-skr3ez
+```
+
+List them at any time:
+
+```text
+./hdr-neptune-install.sh --list
+```
+
+## Non-interactive package selection
+
+The package can be selected on the command line while retaining the final confirmation:
+
+```text
+./hdr-neptune-install.sh --package neptune3max-robin
+```
+
+For an SKR board, an exact serial may be supplied:
+
+```text
+./hdr-neptune-install.sh \
+  --package neptune3max-skr3ez \
+  --mcu-id /dev/serial/by-id/usb-Klipper_stm32h743xx_EXAMPLE-if00
+```
+
+Copy the actual result from `ls /dev/serial/by-id/`; never copy the example value.
+
+## After installation
+
+The script intentionally leaves Klipper untouched until the user reviews the files.
+
+1. Open `printer.cfg` in Mainsail.
+2. Verify the package header names the correct printer and controller.
+3. For SKR, confirm the MCU serial and every board pin/wire.
+4. Open `HDR_Documentation/START_HERE.md`.
+5. Select **Save & Restart** only after the review.
+6. Follow the [controlled commissioning checklist](05-commissioning-checklist.md).
+
+## Restore the backup
+
+The installer places the helper at:
+
+```text
+~/hdr-neptune-restore.sh
+```
+
+It prints the exact backup path at completion. Restore with:
+
+```text
+bash ~/hdr-neptune-restore.sh ~/printer_data/config_backups/BACKUP_DIRECTORY
+```
+
+The restore helper creates another safety backup, requires the word `RESTORE`, replaces the complete config with the selected backup, and does not restart Klipper automatically.
+
+## Manual SSH method
+
+Users who do not want to run the installer can still preserve the folders with ordinary shell tools:
+
+```text
+cd /tmp
+curl -fLO https://raw.githubusercontent.com/HDR-Performance/Neptune-3-Maxout-Configs/main/Neptune3Max-HDR-Performance-Pad7-Complete-Guide.zip
+unzip Neptune3Max-HDR-Performance-Pad7-Complete-Guide.zip
+cp -a ~/printer_data/config ~/printer_data/config-manual-backup
+cp -a Neptune3Max-HDR-Performance-Pad7-Complete-Guide/config/. ~/printer_data/config/
+```
+
+Replace the ZIP and extracted folder names with the exact package selected from the repository. The automated installer is safer because it verifies the expected package layout and manages the backup path consistently.
+
+Return to the [documentation index](README.md).
