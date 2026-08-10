@@ -98,3 +98,6 @@ This project builds on [Klipper](https://www.klipper3d.org/), [BIGTREETECH SKR 3
 
 These are community modification packages, not official Elegoo, BIGTREETECH, Klipper, Micro Swiss, Mainsail, or KAMP releases.
 
+## License
+
+This repository is distributed under the [GNU General Public License v3.0](LICENSE). Third-party projects and bundled components retain their own authorship and license terms.
