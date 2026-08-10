@@ -17,6 +17,7 @@ The older wiring, firmware, KAMP, slicer, Moonraker, troubleshooting, and motor-
 The legacy tutorials have been rebuilt as a structured, corrected documentation set:
 
 - **[Open the complete documentation index](docs/README.md)**
+- **[Install directly from GitHub over SSH](docs/12-ssh-installer.md)**
 - [Choose the correct printer/controller package](docs/01-choose-the-correct-package.md)
 - [Install a package safely](docs/02-install-a-package.md)
 - [Build Robin Nano firmware](docs/03-robin-nano-firmware.md)
@@ -28,6 +29,20 @@ The legacy tutorials have been rebuilt as a structured, corrected documentation 
 - [Use the HDR macro features](docs/09-feature-guide.md)
 - [Upgrade the Neptune 3 Max X/Y motors](docs/10-stepper-motor-upgrade.md)
 - [Repair Moonraker and troubleshoot the printer](docs/11-troubleshooting.md)
+
+## Quick SSH installer
+
+The installer preserves every nested config directory, creates a timestamped backup, and does not restart Klipper automatically:
+
+```text
+cd ~
+curl -fsSL https://raw.githubusercontent.com/HDR-Performance/Neptune-3-Maxout-Configs/main/install.sh -o hdr-neptune-install.sh
+less hdr-neptune-install.sh
+chmod +x hdr-neptune-install.sh
+./hdr-neptune-install.sh
+```
+
+Choose the exact printer and controller from the interactive menu. See the [complete SSH installation and restore guide](docs/12-ssh-installer.md) before running it.
 
 ## Choose the controller family
 
