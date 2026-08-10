@@ -12,6 +12,23 @@ The older wiring, firmware, KAMP, slicer, Moonraker, troubleshooting, and motor-
 > [!CAUTION]
 > Download only the package matching both the printer model and controller. Robin Nano and SKR 3 EZ configurations are not interchangeable. Installing the wrong `printer.cfg`, wiring a connector by shape alone, or exceeding a heater output's current rating can damage hardware or cause uncontrolled motion/heating.
 
+## Documentation
+
+The legacy tutorials have been rebuilt as a structured, corrected documentation set:
+
+- **[Open the complete documentation index](docs/README.md)**
+- [Choose the correct printer/controller package](docs/01-choose-the-correct-package.md)
+- [Install a package safely](docs/02-install-a-package.md)
+- [Build Robin Nano firmware](docs/03-robin-nano-firmware.md)
+- [Convert to SKR 3 EZ and TMC5160 Pro](docs/04-skr3ez-conversion.md)
+- [Follow the commissioning checklist](docs/05-commissioning-checklist.md)
+- [Install and configure KAMP](docs/06-kamp-setup.md)
+- [Calibrate input shaper with the BTT Pad 7](docs/07-input-shaper.md)
+- [Set up OrcaSlicer or Cura](docs/08-slicer-gcode.md)
+- [Use the HDR macro features](docs/09-feature-guide.md)
+- [Upgrade the Neptune 3 Max X/Y motors](docs/10-stepper-motor-upgrade.md)
+- [Repair Moonraker and troubleshoot the printer](docs/11-troubleshooting.md)
+
 ## Choose the controller family
 
 ### Stock Robin Nano + BTT Pad 7
@@ -81,7 +98,7 @@ Every ZIP contains `START_HERE.md`, a model-specific installation sequence, wiri
 | `SET_MATERIAL MATERIAL=PETG` | Select a persistent material pressure-advance profile |
 | `LOAD_FILAMENT` / `UNLOAD_FILAMENT` | Guided filament handling |
 | `M600` / `RUNOUT_RESUME` | Color-change and runout recovery |
-| `CALIBRATE_SHAPER` | Calibrate both axes with the Pad 7 ADXL345 and save |
+| `CALIBRATE_SHAPER` | Quick two-axis calibration; bed-slingers with one movable sensor should follow the per-axis documentation |
 | `BED_PID_TUNE TEMP=60` | Tune and save the bed PID |
 | `NOZZLE_PID_TUNE TEMP=230 FAN_SPEED=0` | Tune and save the hotend PID |
 | `MAINTENANCE_STATUS` | Show print and service counters |
