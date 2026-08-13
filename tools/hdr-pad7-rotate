@@ -19,7 +19,8 @@ fi
 
 DISPLAY_CONNECTOR="${HDR_PAD7_DISPLAY:-HDMI-1}"
 TOUCH_NAME="${HDR_PAD7_TOUCH:-BIQU BTT-HDMI7}"
-TOUCH_OFFSET="${HDR_PAD7_TOUCH_OFFSET:-180}"
+LANDSCAPE_TOUCH_OFFSET="${HDR_PAD7_LANDSCAPE_TOUCH_OFFSET:-0}"
+PORTRAIT_TOUCH_OFFSET="${HDR_PAD7_PORTRAIT_TOUCH_OFFSET:-180}"
 ANGLE="${1:-0}"
 
 case "${ANGLE}" in
@@ -41,18 +42,29 @@ case "${ANGLE}" in
     ;;
 esac
 
-case "${TOUCH_OFFSET}" in
+case "${LANDSCAPE_TOUCH_OFFSET}" in
   0|90|180|270) ;;
   *)
-    printf 'HDR_PAD7_TOUCH_OFFSET must be 0, 90, 180, or 270.\n' >&2
+    printf 'HDR_PAD7_LANDSCAPE_TOUCH_OFFSET must be 0, 90, 180, or 270.\n' >&2
+    exit 2
+    ;;
+esac
+case "${PORTRAIT_TOUCH_OFFSET}" in
+  0|90|180|270) ;;
+  *)
+    printf 'HDR_PAD7_PORTRAIT_TOUCH_OFFSET must be 0, 90, 180, or 270.\n' >&2
     exit 2
     ;;
 esac
 
-# The Pad 7 digitizer is physically mounted 180 degrees from the LCD. Compose
-# that fixed mounting offset with the selected display rotation rather than
-# rotating the display itself an extra time.
-TOUCH_ANGLE=$(( (ANGLE + TOUCH_OFFSET) % 360 ))
+# The BTT-HDMI7/Xorg combination needs no additional correction in landscape,
+# but it needs a 180-degree correction in portrait. Keep both values explicit
+# because one global digitizer offset cannot align all four orientations.
+case "${ANGLE}" in
+  0|180) ACTIVE_TOUCH_OFFSET="${LANDSCAPE_TOUCH_OFFSET}" ;;
+  90|270) ACTIVE_TOUCH_OFFSET="${PORTRAIT_TOUCH_OFFSET}" ;;
+esac
+TOUCH_ANGLE=$(( (ANGLE + ACTIVE_TOUCH_OFFSET) % 360 ))
 case "${TOUCH_ANGLE}" in
   0) TOUCH_MATRIX="1 0 0 0 1 0 0 0 1" ;;
   90) TOUCH_MATRIX="0 -1 1 1 0 0 0 0 1" ;;
@@ -109,8 +121,8 @@ rm -f -- "${LEGACY_TOUCH_FILE}"
 printf '%s\n' "${ANGLE}" >"${STATE_FILE}"
 chmod 0644 "${STATE_FILE}"
 
-printf 'Pad 7 display set to %s degrees; touchscreen matrix set to %s degrees.\n' \
-  "${ANGLE}" "${TOUCH_ANGLE}"
+printf 'Pad 7 display set to %s degrees; touchscreen matrix set to %s degrees (layout offset %s).\n' \
+  "${ANGLE}" "${TOUCH_ANGLE}" "${ACTIVE_TOUCH_OFFSET}"
 if systemctl is-active --quiet KlipperScreen.service; then
   systemctl restart KlipperScreen.service
 fi
