@@ -12,8 +12,9 @@ The HDR Performance installer downloads the selected package directly from GitHu
 6. Preserves other host files such as `moonraker.conf`, `mainsail.cfg`, `crowsnest.conf`, and timelapse settings.
 7. Copies the package guides into `config/HDR_Documentation` for viewing in Mainsail.
 8. Offers to insert the SKR MCU serial when exactly one `/dev/serial/by-id/` device is detected.
-9. Does **not** restart Klipper automatically.
-10. Downloads a restore helper and prints the exact backup path.
+9. Detects a Raspberry Pi CM4 and changes the Pad 7 host-MCU/ADXL settings from `CB1`/`spidev1.1` to `CM4`/`spidev0.1`.
+10. Does **not** restart Klipper automatically.
+11. Downloads a restore helper and prints the exact backup path.
 
 If the Pad 7 has Moonraker/Mainsail configuration but no `printer.cfg` yet, the installer explicitly reports **fresh install** mode. It backs up the existing host files and then creates the missing printer configuration and nested directories.
 
@@ -94,6 +95,17 @@ For an SKR board, an exact serial may be supplied:
 ```
 
 Copy the actual result from `ls /dev/serial/by-id/`; never copy the example value.
+
+The Pad host is detected automatically. It may also be selected explicitly:
+
+```text
+./hdr-neptune-install.sh \
+  --package neptune3max-skr3ez \
+  --host cm4 \
+  --mcu-id /dev/serial/by-id/usb-Klipper_stm32h723xx_EXAMPLE-if00
+```
+
+Valid host values are `auto`, `cb1`, and `cm4`. On CM4, the installer adapts the package to `[mcu CM4]`, `cs_pin: CM4:None`, and `spi_bus: spidev0.1`. The CM4 Linux host-MCU service and Pad 7 boot/display settings still need to be installed once by following the BIGTREETECH Pad 7 and Klipper host-MCU guides.
 
 ## After installation
 
