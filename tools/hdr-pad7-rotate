@@ -19,6 +19,7 @@ fi
 
 DISPLAY_CONNECTOR="${HDR_PAD7_DISPLAY:-HDMI-1}"
 TOUCH_NAME="${HDR_PAD7_TOUCH:-BIQU BTT-HDMI7}"
+TOUCH_OFFSET="${HDR_PAD7_TOUCH_OFFSET:-180}"
 ANGLE="${1:-next}"
 
 if [[ "${ANGLE}" == "next" ]]; then
@@ -34,24 +35,39 @@ fi
 case "${ANGLE}" in
   0)
     XORG_ROTATION="normal"
-    TOUCH_MATRIX="1 0 0 0 1 0 0 0 1"
     ;;
   90)
     XORG_ROTATION="right"
-    TOUCH_MATRIX="0 -1 1 1 0 0 0 0 1"
     ;;
   180)
     XORG_ROTATION="inverted"
-    TOUCH_MATRIX="-1 0 1 0 -1 1 0 0 1"
     ;;
   270)
     XORG_ROTATION="left"
-    TOUCH_MATRIX="0 1 0 -1 0 1 0 0 1"
     ;;
   *)
     printf 'Usage: %s {0|90|180|270|next}\n' "$0" >&2
     exit 2
     ;;
+esac
+
+case "${TOUCH_OFFSET}" in
+  0|90|180|270) ;;
+  *)
+    printf 'HDR_PAD7_TOUCH_OFFSET must be 0, 90, 180, or 270.\n' >&2
+    exit 2
+    ;;
+esac
+
+# The Pad 7 digitizer is physically mounted 180 degrees from the LCD. Compose
+# that fixed mounting offset with the selected display rotation rather than
+# rotating the display itself an extra time.
+TOUCH_ANGLE=$(( (ANGLE + TOUCH_OFFSET) % 360 ))
+case "${TOUCH_ANGLE}" in
+  0) TOUCH_MATRIX="1 0 0 0 1 0 0 0 1" ;;
+  90) TOUCH_MATRIX="0 -1 1 1 0 0 0 0 1" ;;
+  180) TOUCH_MATRIX="-1 0 1 0 -1 1 0 0 1" ;;
+  270) TOUCH_MATRIX="0 1 0 -1 0 1 0 0 1" ;;
 esac
 
 # The cycle service is active at boot so Moonraker can expose it. During a
@@ -103,7 +119,8 @@ rm -f -- "${LEGACY_TOUCH_FILE}"
 printf '%s\n' "${ANGLE}" >"${STATE_FILE}"
 chmod 0644 "${STATE_FILE}"
 
-printf 'Pad 7 display and touchscreen rotation set to %s degrees.\n' "${ANGLE}"
+printf 'Pad 7 display set to %s degrees; touchscreen matrix set to %s degrees.\n' \
+  "${ANGLE}" "${TOUCH_ANGLE}"
 if systemctl is-active --quiet KlipperScreen.service; then
   systemctl restart KlipperScreen.service
 fi
