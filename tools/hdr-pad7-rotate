@@ -4,7 +4,8 @@ set -Eeuo pipefail
 SETTINGS_FILE="/etc/default/hdr-pad7-rotation"
 STATE_FILE="/etc/hdr-pad7-rotation.state"
 MONITOR_FILE="/etc/X11/xorg.conf.d/90-hdr-pad7-monitor.conf"
-TOUCH_FILE="/etc/udev/rules.d/51-hdr-pad7-touchscreen.rules"
+TOUCH_FILE="/etc/X11/xorg.conf.d/91-hdr-pad7-touchscreen.conf"
+LEGACY_TOUCH_FILE="/etc/udev/rules.d/51-hdr-pad7-touchscreen.rules"
 
 [[ "${EUID}" -eq 0 ]] || {
   printf 'Run this command with sudo.\n' >&2
@@ -67,7 +68,7 @@ fi
   exit 1
 }
 
-install -d -m 0755 /etc/X11/xorg.conf.d /etc/udev/rules.d
+install -d -m 0755 /etc/X11/xorg.conf.d
 
 MONITOR_TMP="$(mktemp)"
 TOUCH_TMP="$(mktemp)"
@@ -84,16 +85,23 @@ EOF
 
 cat >"${TOUCH_TMP}" <<EOF
 # Managed by HDR Performance Pad 7 rotation controls.
-SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="${TOUCH_NAME}", ENV{LIBINPUT_CALIBRATION_MATRIX}="${TOUCH_MATRIX}"
+Section "InputClass"
+    Identifier "HDR Performance Pad 7 Touchscreen"
+    MatchProduct "${TOUCH_NAME}"
+    MatchIsTouchscreen "on"
+    Driver "libinput"
+    Option "TransformationMatrix" "${TOUCH_MATRIX}"
+EndSection
 EOF
 
 install -m 0644 "${MONITOR_TMP}" "${MONITOR_FILE}"
 install -m 0644 "${TOUCH_TMP}" "${TOUCH_FILE}"
+# Earlier versions used a udev libinput calibration rule. This Pad's Xorg
+# stack did not apply that rule to its screen coordinates, and combining both
+# methods can double-transform input. Keep only the Xorg InputClass rule.
+rm -f -- "${LEGACY_TOUCH_FILE}"
 printf '%s\n' "${ANGLE}" >"${STATE_FILE}"
 chmod 0644 "${STATE_FILE}"
-
-udevadm control --reload-rules
-udevadm trigger --subsystem-match=input --action=change || true
 
 printf 'Pad 7 display and touchscreen rotation set to %s degrees.\n' "${ANGLE}"
 if systemctl is-active --quiet KlipperScreen.service; then
