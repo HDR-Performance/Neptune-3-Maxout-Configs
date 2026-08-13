@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+SETTINGS_FILE="/etc/default/hdr-pad7-rotation"
+STATE_FILE="/etc/hdr-pad7-rotation.state"
+MONITOR_FILE="/etc/X11/xorg.conf.d/90-hdr-pad7-monitor.conf"
+TOUCH_FILE="/etc/udev/rules.d/51-hdr-pad7-touchscreen.rules"
+
+[[ "${EUID}" -eq 0 ]] || {
+  printf 'Run this command with sudo.\n' >&2
+  exit 1
+}
+
+if [[ -r "${SETTINGS_FILE}" ]]; then
+  # shellcheck source=/dev/null
+  source "${SETTINGS_FILE}"
+fi
+
+DISPLAY_CONNECTOR="${HDR_PAD7_DISPLAY:-HDMI-1}"
+TOUCH_NAME="${HDR_PAD7_TOUCH:-BIQU BTT-HDMI7}"
+ANGLE="${1:-next}"
+
+if [[ "${ANGLE}" == "next" ]]; then
+  CURRENT="$(tr -cd '0-9' <"${STATE_FILE}" 2>/dev/null || true)"
+  case "${CURRENT:-0}" in
+    0) ANGLE=90 ;;
+    90) ANGLE=180 ;;
+    180) ANGLE=270 ;;
+    *) ANGLE=0 ;;
+  esac
+fi
+
+case "${ANGLE}" in
+  0)
+    XORG_ROTATION="normal"
+    TOUCH_MATRIX="1 0 0 0 1 0 0 0 1"
+    ;;
+  90)
+    XORG_ROTATION="right"
+    TOUCH_MATRIX="0 -1 1 1 0 0 0 0 1"
+    ;;
+  180)
+    XORG_ROTATION="inverted"
+    TOUCH_MATRIX="-1 0 1 0 -1 1 0 0 1"
+    ;;
+  270)
+    XORG_ROTATION="left"
+    TOUCH_MATRIX="0 1 0 -1 0 1 0 0 1"
+    ;;
+  *)
+    printf 'Usage: %s {0|90|180|270|next}\n' "$0" >&2
+    exit 2
+    ;;
+esac
+
+# The cycle service is active at boot so Moonraker can expose it. During a
+# host shutdown systemd also stops the service; do not rotate at that time.
+if [[ "${HDR_PAD7_SERVICE_STOP:-0}" == "1" ]]; then
+  SYSTEM_STATE="$(systemctl is-system-running 2>/dev/null || true)"
+  case "${SYSTEM_STATE}" in
+    stopping|offline) exit 0 ;;
+  esac
+fi
+
+[[ "${DISPLAY_CONNECTOR}" != *'"'* && "${TOUCH_NAME}" != *'"'* ]] || {
+  printf 'Display and touch names must not contain quotation marks.\n' >&2
+  exit 1
+}
+
+install -d -m 0755 /etc/X11/xorg.conf.d /etc/udev/rules.d
+
+MONITOR_TMP="$(mktemp)"
+TOUCH_TMP="$(mktemp)"
+trap 'rm -f -- "${MONITOR_TMP}" "${TOUCH_TMP}"' EXIT
+
+cat >"${MONITOR_TMP}" <<EOF
+# Managed by HDR Performance Pad 7 rotation controls.
+Section "Monitor"
+    Identifier "${DISPLAY_CONNECTOR}"
+    Option "Rotate" "${XORG_ROTATION}"
+    Option "PreferredMode" "1024x600"
+EndSection
+EOF
+
+cat >"${TOUCH_TMP}" <<EOF
+# Managed by HDR Performance Pad 7 rotation controls.
+SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="${TOUCH_NAME}", ENV{LIBINPUT_CALIBRATION_MATRIX}="${TOUCH_MATRIX}"
+EOF
+
+install -m 0644 "${MONITOR_TMP}" "${MONITOR_FILE}"
+install -m 0644 "${TOUCH_TMP}" "${TOUCH_FILE}"
+printf '%s\n' "${ANGLE}" >"${STATE_FILE}"
+chmod 0644 "${STATE_FILE}"
+
+udevadm control --reload-rules
+udevadm trigger --subsystem-match=input --action=change || true
+
+printf 'Pad 7 display and touchscreen rotation set to %s degrees.\n' "${ANGLE}"
+if systemctl is-active --quiet KlipperScreen.service; then
+  systemctl restart KlipperScreen.service
+fi
