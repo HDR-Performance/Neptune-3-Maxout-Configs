@@ -1,19 +1,19 @@
-/* Neptune Maxout theme for KlipperScreen by HDR Performance */
-@define-color text #f4f4f4;
-@define-color bg #09090a;
-@define-color buttons-bg rgba(8, 8, 10, 0.88);
-@define-color color1 #ff2020;
-@define-color color2 #c91524;
-@define-color color3 #ff6a00;
-@define-color color4 #8f9aa8;
+/* Neptune Maxout bubble-performance theme for KlipperScreen by HDR Performance */
+@define-color text #fff7f7;
+@define-color bg #070709;
+@define-color buttons-bg rgba(13, 10, 12, 0.96);
+@define-color color1 #ff3038;
+@define-color color2 #d7192b;
+@define-color color3 #ff7200;
+@define-color color4 #aeb7c2;
 
-@define-color echo #14853b;
-@define-color warning #ff8a00;
+@define-color echo #18a451;
+@define-color warning #ff9300;
 @define-color error #d71920;
-@define-color active #ff2020;
-@define-color active-dark rgba(48, 10, 13, 0.94);
-@define-color lines #b9bec6;
-@define-color slider #ff2020;
+@define-color active #ff3038;
+@define-color active-dark rgba(66, 10, 17, 0.98);
+@define-color lines #c9cdd3;
+@define-color slider #ff3038;
 
 * {
     color: @text;
@@ -30,39 +30,50 @@ window {
 junction,
 list row,
 treeview.view {
-    background-color: rgba(9, 9, 10, 0.94);
+    background-color: rgba(7, 7, 9, 0.94);
 }
 
+/* Soft, deep controls with a red performance edge and a raised highlight. */
 button {
     background-color: @buttons-bg;
-    border: 0.12em solid rgba(255, 32, 32, 0.38);
-    border-radius: 1em;
+    background-image: linear-gradient(to bottom, rgba(61, 20, 25, 0.96), rgba(10, 10, 13, 0.98));
+    border: 0.13em solid rgba(255, 48, 56, 0.58);
+    border-radius: 1.65em;
+    box-shadow: inset 0 0.13em rgba(255, 255, 255, 0.11),
+                inset 0 -0.14em rgba(0, 0, 0, 0.72),
+                0 0.20em 0.48em rgba(0, 0, 0, 0.64);
+    margin: 0.18em;
+    padding: 0.38em;
+}
+
+button label {
+    text-shadow: 0 0.08em rgba(0, 0, 0, 0.92);
+}
+
+button image {
+    padding: 0.14em;
+    border-radius: 999px;
+    -gtk-icon-shadow: 0 0 0.50em rgba(255, 48, 56, 0.72);
 }
 
 button.color1 {
-    background-color: @buttons-bg;
-    border-color: @color1;
+    border-color: #ff4a50;
+    background-image: linear-gradient(to bottom, rgba(91, 18, 24, 0.98), rgba(15, 10, 13, 0.98));
 }
 
 button.color2 {
-    background-color: @buttons-bg;
     border-color: @color2;
+    background-image: linear-gradient(to bottom, rgba(67, 11, 22, 0.98), rgba(14, 9, 12, 0.98));
 }
 
 button.color3 {
-    background-color: @buttons-bg;
     border-color: @color3;
+    background-image: linear-gradient(to bottom, rgba(78, 29, 8, 0.98), rgba(16, 10, 8, 0.98));
 }
 
 button.color4 {
-    background-color: @buttons-bg;
-    border-color: @color4;
-}
-
-.button_active {
-    background-color: @active-dark;
-    border-width: 0.25em;
-    border-radius: 1em;
+    border-color: rgba(200, 205, 213, 0.68);
+    background-image: linear-gradient(to bottom, rgba(43, 45, 51, 0.98), rgba(11, 11, 14, 0.98));
 }
 
 button:focus,
@@ -73,11 +84,16 @@ button.color4:focus,
 button.update:focus,
 button.invalid:focus,
 .dialog button:focus {
-    outline: 0.12em solid @active;
+    outline: 0.13em solid #ff6268;
     outline-offset: 0.08em;
+    box-shadow: inset 0 0.13em rgba(255, 255, 255, 0.15),
+                0 0 0.62em rgba(255, 48, 56, 0.78);
 }
 
-.active image,
+.button_active,
+.horizontal_togglebuttons_active,
+button.active,
+button:active,
 button.color1:active,
 button.color2:active,
 button.color3:active,
@@ -85,74 +101,121 @@ button.color4:active,
 button.update:active,
 button.invalid:active,
 .dialog button:active {
-    border-style: none;
-    margin-top: 0.6em;
+    background-color: @active-dark;
+    background-image: linear-gradient(to bottom, rgba(113, 16, 28, 0.98), rgba(36, 8, 13, 0.98));
+    border-color: #ff6970;
+    border-width: 0.18em;
+    border-radius: 1.65em;
+    box-shadow: inset 0 0.25em 0.52em rgba(0, 0, 0, 0.72),
+                0 0 0.58em rgba(255, 48, 56, 0.55);
+}
+
+.active image,
+button:active image,
+button.active image {
+    -gtk-icon-shadow: 0 0 0.76em rgba(255, 105, 112, 0.96);
 }
 
 button.update,
 button.invalid {
-    background-color: @buttons-bg;
-    border: 0;
-    border-bottom: 0.3em solid;
-    border-radius: 0.75em;
+    border: 0.13em solid;
+    border-radius: 1.65em;
+    font-weight: bold;
 }
 
 button.update {
-    border-bottom-color: @echo;
+    border-color: @echo;
+    background-image: linear-gradient(to bottom, rgba(15, 91, 47, 0.98), rgba(8, 25, 16, 0.98));
 }
 
 button.invalid {
-    border-bottom-color: @error;
+    border-color: @error;
+    background-image: linear-gradient(to bottom, rgba(111, 18, 25, 0.98), rgba(31, 7, 10, 0.98));
 }
 
-menu,
-menuitem,
 combobox button,
-combobox menuitem {
-    background-color: rgba(28, 9, 11, 0.98);
-    border-color: @bg;
+entry,
+menu,
+menuitem {
+    background-color: rgba(25, 8, 11, 0.98);
+    border-color: rgba(255, 48, 56, 0.42);
+    border-radius: 1.05em;
+}
+
+entry {
+    box-shadow: inset 0 0.12em 0.34em rgba(0, 0, 0, 0.75);
+}
+
+switch {
+    background-color: rgba(46, 13, 18, 0.98);
+    border: 0.10em solid rgba(255, 48, 56, 0.48);
+    border-radius: 3em;
+    box-shadow: inset 0 0.14em 0.36em rgba(0, 0, 0, 0.70);
+}
+
+switch slider {
+    background-color: #d9dde2;
+    border-radius: 999px;
+    box-shadow: 0 0.10em 0.32em rgba(0, 0, 0, 0.72);
 }
 
 treeview.view check,
-switch {
+treeview.view check:checked,
+switch:checked {
     background-color: @active-dark;
+    border-radius: 999px;
 }
 
 treeview.view check:checked,
 switch:checked {
     background-color: @active;
+    box-shadow: 0 0 0.50em rgba(255, 48, 56, 0.74);
 }
 
 treeview.view check:checked {
     -gtk-icon-source: url("./styles/neptune-maxout/images/complete.svg");
 }
 
-entry,
 trough {
-    background-color: @active-dark;
-    border-color: rgba(255, 32, 32, 0.25);
+    background-color: rgba(45, 12, 17, 0.98);
+    border: 0.08em solid rgba(255, 48, 56, 0.30);
+    border-radius: 999px;
+    box-shadow: inset 0 0.12em 0.34em rgba(0, 0, 0, 0.78);
 }
 
 trough highlight,
 trough progress {
     background-color: @slider;
+    background-image: linear-gradient(to bottom, #ff5b62, #d7192b);
     color: @text;
     border-color: @bg;
+    border-radius: 999px;
+}
+
+scale trough slider {
+    background-color: #fff4f4;
+    border: 0.13em solid @active;
+    border-radius: 999px;
+    box-shadow: 0 0 0.52em rgba(255, 48, 56, 0.70);
 }
 
 scrollbar,
 scrollbar button,
 scrollbar trough {
-    background-color: rgba(9, 9, 10, 0.92);
+    background-color: rgba(7, 7, 9, 0.92);
 }
 
 scrollbar slider {
-    background-color: #5f1820;
+    background-color: #7b1722;
+    background-image: linear-gradient(to right, #6b141e, #d7192b);
+    border-radius: 999px;
 }
 
 .dialog {
-    border: 0.12em solid @active;
-    background-color: rgba(9, 9, 10, 0.98);
+    border: 0.14em solid @active;
+    border-radius: 1.55em;
+    background-color: rgba(8, 8, 10, 0.98);
+    box-shadow: 0 0 1em rgba(255, 48, 56, 0.34);
 }
 
 .dialog button,
@@ -160,12 +223,7 @@ scrollbar slider {
 .numpad_key,
 .keyboard_pad {
     background-color: @buttons-bg;
-}
-
-button:active,
-.horizontal_togglebuttons_active,
-button.active {
-    background-color: @active-dark;
+    border-radius: 1.45em;
 }
 
 .message_popup_echo,
