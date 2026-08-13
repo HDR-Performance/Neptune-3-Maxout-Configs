@@ -18,6 +18,8 @@ The legacy tutorials have been rebuilt as a structured, corrected documentation 
 
 - **[Open the complete documentation index](docs/README.md)**
 - **[Install directly from GitHub over SSH](docs/12-ssh-installer.md)**
+- **[Set up a Raspberry Pi 4 or generic CM4 host](docs/13-raspberry-pi4-cm4-klipper-host.md)**
+- **[Set up a Pad 7 CM4, motor controls, and screen rotation](docs/14-pad7-cm4-klipperscreen.md)**
 - [Choose the correct printer/controller package](docs/01-choose-the-correct-package.md)
 - [Install a package safely](docs/02-install-a-package.md)
 - [Build Robin Nano firmware](docs/03-robin-nano-firmware.md)
@@ -82,6 +84,7 @@ Every ZIP contains `START_HERE.md`, a model-specific installation sequence, wiri
 - Maintenance counters and guided PID tuning
 - Model-specific homing, mesh, motion envelope, and screw locations
 - Organized `custom/kamp`, `custom/macros`, and `custom/state` directories
+- Pad 7 CM4 screen rotation that rotates the display and touchscreen matrix together
 
 ## Corrected SKR 3 EZ details
 
@@ -117,6 +120,8 @@ Every ZIP contains `START_HERE.md`, a model-specific installation sequence, wiri
 | `BED_PID_TUNE TEMP=60` | Tune and save the bed PID |
 | `NOZZLE_PID_TUNE TEMP=230 FAN_SPEED=0` | Tune and save the hotend PID |
 | `MAINTENANCE_STATUS` | Show print and service counters |
+
+KlipperScreen's **Move** panel also includes **Disable Motors** beside **Home**. Releasing the motors clears the trusted position, so home again before moving or printing.
 
 ## Validation
 
