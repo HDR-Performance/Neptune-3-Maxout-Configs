@@ -44,7 +44,7 @@ Usage:
 Options:
   --package ID       Skip the menu and select a package ID.
   --mcu-id PATH      SKR only: replace the MCU placeholder with this exact path.
-  --host TYPE        Pad host: auto (default), cb1, or cm4.
+  --host TYPE        Klipper host: auto (default), cb1, cm4, or pi4.
   --pad7-ui MODE     Pad 7 controls: auto (default), on, or off.
   --pad7-theme MODE  Neptune Maxout theme: auto (default), on, or off.
   --config-dir PATH  Override ~/printer_data/config.
@@ -67,14 +67,14 @@ EOF
 
 list_packages() {
   cat <<'EOF'
-1) neptune3-robin       - Neptune 3 / stock Robin Nano / BTT Pad 7
-2) neptune3pro-robin    - Neptune 3 Pro / stock Robin Nano / BTT Pad 7
-3) neptune3plus-robin   - Neptune 3 Plus / stock Robin Nano / BTT Pad 7
-4) neptune3max-robin    - Neptune 3 Max / stock Robin Nano / BTT Pad 7
-5) neptune3-skr3ez      - Neptune 3 / SKR 3 EZ / TMC5160 Pro / BTT Pad 7
-6) neptune3pro-skr3ez   - Neptune 3 Pro / SKR 3 EZ / TMC5160 Pro / BTT Pad 7
-7) neptune3plus-skr3ez  - Neptune 3 Plus / SKR 3 EZ / TMC5160 Pro / BTT Pad 7
-8) neptune3max-skr3ez   - Neptune 3 Max / SKR 3 EZ / TMC5160 Pro / BTT Pad 7
+1) neptune3-robin       - Neptune 3 / stock Robin Nano / Pad 7 or Raspberry Pi 4
+2) neptune3pro-robin    - Neptune 3 Pro / stock Robin Nano / Pad 7 or Raspberry Pi 4
+3) neptune3plus-robin   - Neptune 3 Plus / stock Robin Nano / Pad 7 or Raspberry Pi 4
+4) neptune3max-robin    - Neptune 3 Max / stock Robin Nano / Pad 7 or Raspberry Pi 4
+5) neptune3-skr3ez      - Neptune 3 / SKR 3 EZ / TMC5160 Pro / Pad 7 or Raspberry Pi 4
+6) neptune3pro-skr3ez   - Neptune 3 Pro / SKR 3 EZ / TMC5160 Pro / Pad 7 or Raspberry Pi 4
+7) neptune3plus-skr3ez  - Neptune 3 Plus / SKR 3 EZ / TMC5160 Pro / Pad 7 or Raspberry Pi 4
+8) neptune3max-skr3ez   - Neptune 3 Max / SKR 3 EZ / TMC5160 Pro / Pad 7 or Raspberry Pi 4
 EOF
 }
 
@@ -151,13 +151,14 @@ resolve_host_type() {
         model="$(tr -d '\0' </proc/device-tree/model)"
       fi
       case "${model}" in
+        *"Raspberry Pi 4 Model"*) HOST_TYPE="pi4" ;;
         *"Compute Module 4"*) HOST_TYPE="cm4" ;;
         *"BTT-CB1"*|*"BIGTREETECH CB1"*) HOST_TYPE="cb1" ;;
         *) HOST_TYPE="unchanged" ;;
       esac
       ;;
-    cb1|cm4) ;;
-    *) die "--host must be auto, cb1, or cm4." ;;
+    cb1|cm4|pi4) ;;
+    *) die "--host must be auto, cb1, cm4, or pi4." ;;
   esac
 }
 
@@ -175,9 +176,31 @@ adapt_host_config() {
     grep -q 'cs_pin: CM4:None' "${printer_cfg}" || die "CM4 adaptation could not set the ADXL chip select."
     grep -q 'spi_bus: spidev0.1' "${printer_cfg}" || die "CM4 adaptation could not set the ADXL SPI bus."
     info "Adapted Pad 7 input shaping for Raspberry Pi CM4"
+  elif [[ "${HOST_TYPE}" == "pi4" ]]; then
+    local pi4_cfg="${printer_cfg}.pi4"
+    awk '
+      /^\[(mcu (CB1|CM4)|adxl345|resonance_tester)\]([[:space:]]*(#.*)?)?$/ {
+        skip=1
+        next
+      }
+      skip && /^\[/ {skip=0}
+      !skip {print}
+    ' "${printer_cfg}" >"${pi4_cfg}"
+    mv "${pi4_cfg}" "${printer_cfg}"
+    cat >>"${printer_cfg}" <<'EOF'
+
+# HDR Raspberry Pi 4 host mode:
+# Pad 7 host-MCU and built-in ADXL345 sections were intentionally removed.
+# The printer runs with saved input-shaper values. Configure and test a separately
+# wired accelerometer before using SHAPER_CALIBRATE; see docs/18-raspberry-pi4-ssh-install.md.
+EOF
+    if grep -Eq '^\[(mcu (CB1|CM4)|adxl345|resonance_tester)\]' "${printer_cfg}"; then
+      die "Raspberry Pi 4 adaptation could not remove the Pad 7-only host sections."
+    fi
+    info "Adapted the package for a Raspberry Pi 4 without Pad 7-only MCU/ADXL hardware"
   elif [[ "${HOST_TYPE}" == "unchanged" ]]; then
     printf 'WARNING: Pad host was not recognized; host-MCU/ADXL settings were left unchanged.\n' >&2
-    printf 'Use --host cb1 or --host cm4 when the host type is known.\n' >&2
+    printf 'Use --host cb1, --host cm4, or --host pi4 when the host type is known.\n' >&2
   fi
 }
 
@@ -347,7 +370,7 @@ printf '\nHDR Performance Neptune 3 installer\n'
 printf 'Package:    %s\n' "${PACKAGE_LABEL}"
 printf 'Config dir: %s\n' "${CONFIG_DIR}"
 printf 'Source:     %s/%s\n' "${RAW_BASE}" "${ZIP_NAME}"
-printf 'Pad host:   %s\n' "${HOST_TYPE}"
+printf 'Host:       %s\n' "${HOST_TYPE}"
 printf 'Pad 7 UI:   %s\n' "${PAD7_UI_MODE}"
 printf 'Pad 7 theme:%s\n' " ${PAD7_THEME_MODE}"
 if [[ ${FRESH_INSTALL} -eq 1 ]]; then
