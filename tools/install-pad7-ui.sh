@@ -31,10 +31,12 @@ sudo -v
 
 DISPLAY_CONNECTOR="$(DISPLAY=:0 xrandr --query 2>/dev/null | awk '/ connected primary| connected / {print $1; exit}')"
 TOUCH_NAME="$(DISPLAY=:0 xinput list --name-only 2>/dev/null | grep -Ei 'BTT-HDMI7|touchscreen|touch' | head -n 1 || true)"
-TOUCH_OFFSET="${HDR_PAD7_TOUCH_OFFSET:-180}"
+LANDSCAPE_TOUCH_OFFSET="${HDR_PAD7_LANDSCAPE_TOUCH_OFFSET:-0}"
+PORTRAIT_TOUCH_OFFSET="${HDR_PAD7_PORTRAIT_TOUCH_OFFSET:-180}"
 [[ -n "${DISPLAY_CONNECTOR}" ]] || die "No connected X11 display was detected on DISPLAY=:0."
 [[ -n "${TOUCH_NAME}" ]] || die "No Pad 7 touchscreen was detected on DISPLAY=:0."
-[[ "${TOUCH_OFFSET}" =~ ^(0|90|180|270)$ ]] || die "HDR_PAD7_TOUCH_OFFSET must be 0, 90, 180, or 270."
+[[ "${LANDSCAPE_TOUCH_OFFSET}" =~ ^(0|90|180|270)$ ]] || die "HDR_PAD7_LANDSCAPE_TOUCH_OFFSET must be 0, 90, 180, or 270."
+[[ "${PORTRAIT_TOUCH_OFFSET}" =~ ^(0|90|180|270)$ ]] || die "HDR_PAD7_PORTRAIT_TOUCH_OFFSET must be 0, 90, 180, or 270."
 
 if [[ ! -f "${ROTATOR_SOURCE}" ]]; then
   TEMP_FILE="$(mktemp)"
@@ -55,7 +57,8 @@ SETTINGS_TMP="$(mktemp)"
 cat >"${SETTINGS_TMP}" <<EOF
 HDR_PAD7_DISPLAY="${DISPLAY_CONNECTOR}"
 HDR_PAD7_TOUCH="${TOUCH_NAME}"
-HDR_PAD7_TOUCH_OFFSET="${TOUCH_OFFSET}"
+HDR_PAD7_LANDSCAPE_TOUCH_OFFSET="${LANDSCAPE_TOUCH_OFFSET}"
+HDR_PAD7_PORTRAIT_TOUCH_OFFSET="${PORTRAIT_TOUCH_OFFSET}"
 EOF
 sudo install -m 0644 "${SETTINGS_TMP}" /etc/default/hdr-pad7-rotation
 rm -f -- "${SETTINGS_TMP}"
@@ -207,7 +210,8 @@ sudo systemctl restart moonraker.service
 
 printf '\nHDR Performance Pad 7 controls installed.\n'
 printf 'Display: %s\nTouchscreen: %s\n' "${DISPLAY_CONNECTOR}" "${TOUCH_NAME}"
-printf 'Touchscreen mounting offset: %s degrees\n' "${TOUCH_OFFSET}"
+printf 'Touchscreen offsets: landscape %s degrees, portrait %s degrees\n' \
+  "${LANDSCAPE_TOUCH_OFFSET}" "${PORTRAIT_TOUCH_OFFSET}"
 printf 'KlipperScreen: More > Screen Rotation > choose an explicit orientation\n'
 printf 'KlipperScreen: Main Menu > Macros\n'
 printf 'Motor release: Move > Disable Motors (the motor-off icon beside Home).\n'
