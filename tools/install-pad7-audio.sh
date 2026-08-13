@@ -14,6 +14,7 @@ HELPER="/usr/local/bin/hdr-maxout-sound"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 SOURCE_SOUND="${HDR_SOUND_FILE:-}"
 BOOT_CHANGED=0
+IS_CM4=0
 TEMP_DIR=""
 
 cleanup() {
@@ -38,9 +39,64 @@ download_file() {
 }
 
 command -v systemctl >/dev/null 2>&1 || die "systemd is required."
-command -v aplay >/dev/null 2>&1 || die "aplay is required (install the alsa-utils package)."
 [[ -f "${KS_GTK}" ]] || die "KlipperScreen button factory not found: ${KS_GTK}"
 systemctl cat KlipperScreen.service >/dev/null 2>&1 || die "KlipperScreen.service was not found."
+
+model=""
+[[ -r /proc/device-tree/model ]] && model="$(tr -d '\0' </proc/device-tree/model)"
+if [[ "${model}" == *"Compute Module 4"* ]]; then
+  IS_CM4=1
+fi
+
+if [[ ${IS_CM4} -eq 1 ]]; then
+  if ! command -v pw-play >/dev/null 2>&1 || \
+     ! command -v wpctl >/dev/null 2>&1 || \
+     ! command -v wireplumber >/dev/null 2>&1; then
+    command -v apt-get >/dev/null 2>&1 || die "CM4 audio requires apt-get to install PipeWire and WirePlumber."
+    printf 'Installing the tested CM4 HDMI audio stack (PipeWire and WirePlumber)...\n'
+    sudo apt-get update
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      pipewire pipewire-pulse wireplumber pipewire-alsa
+  fi
+
+  WIREPLUMBER_DIR="${HOME}/.config/wireplumber/wireplumber.conf.d"
+  WIREPLUMBER_CONFIG="${WIREPLUMBER_DIR}/51-hdr-pad7-hdmi.conf"
+  mkdir -p "${WIREPLUMBER_DIR}"
+  [[ ! -f "${WIREPLUMBER_CONFIG}" ]] || \
+    cp -a "${WIREPLUMBER_CONFIG}" "${WIREPLUMBER_CONFIG}.hdr-audio-backup-${STAMP}"
+  cat >"${WIREPLUMBER_CONFIG}" <<'EOF'
+# HDR Performance - keep Pad 7 HDMI0 ready for short KlipperScreen sounds.
+monitor.alsa.rules = [
+  {
+    matches = [
+      { node.name = "~alsa_output.*hdmi.*" }
+    ]
+    actions = {
+      update-props = {
+        session.suspend-timeout-seconds = 0
+        node.pause-on-idle = false
+      }
+    }
+  }
+]
+EOF
+
+  export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+  export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=${XDG_RUNTIME_DIR}/bus}"
+  [[ -S "${XDG_RUNTIME_DIR}/bus" ]] || die "The user D-Bus session is unavailable; log in normally and run the installer without sudo."
+  systemctl --user daemon-reload
+  systemctl --user enable --now pipewire.socket pipewire-pulse.socket
+  systemctl --user enable --now wireplumber.service
+  systemctl --user restart wireplumber.service pipewire.service pipewire-pulse.service
+  sleep 3
+
+  HDMI_SINK_ID="$(wpctl status -n 2>/dev/null | sed -nE '/alsa_output.*hdmi.*hdmi-stereo/ {s/.*[[:space:]]([0-9]+)\.[[:space:]].*/\1/p; q;}')"
+  [[ -n "${HDMI_SINK_ID}" ]] || die "PipeWire started, but the Pad 7 HDMI sink was not found."
+  wpctl set-default "${HDMI_SINK_ID}"
+  wpctl set-volume @DEFAULT_AUDIO_SINK@ 1.0
+else
+  command -v aplay >/dev/null 2>&1 || die "CB1 audio requires aplay from the alsa-utils package."
+fi
 
 TEMP_DIR="$(mktemp -d -t hdr-pad7-audio.XXXXXX)"
 if [[ -z "${SOURCE_SOUND}" ]]; then
@@ -64,14 +120,23 @@ if [[ -r "${KS_CONFIG}" ]] && ! grep -Eiq '^[[:space:]]*theme[[:space:]]*[:=][[:
   exit 0
 fi
 
-device="default"
-if aplay -l 2>/dev/null | grep -q 'vc4hdmi0'; then
-  device="plughw:CARD=vc4hdmi0,DEV=0"
-fi
-
 exec 9>"/tmp/hdr-maxout-sound.lock"
 flock -n 9 || exit 0
-aplay -q -D "${device}" "${SOUND}" >/dev/null 2>&1 || true
+date --iso-8601=ns >"/tmp/hdr-maxout-sound.last"
+
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=${XDG_RUNTIME_DIR}/bus}"
+if command -v pw-play >/dev/null 2>&1; then
+  pw-play "${SOUND}" >/dev/null 2>&1 || true
+elif command -v paplay >/dev/null 2>&1; then
+  paplay "${SOUND}" >/dev/null 2>&1 || true
+else
+  device="default"
+  if aplay -l 2>/dev/null | grep -q 'vc4hdmi0'; then
+    device="plughw:CARD=vc4hdmi0,DEV=0"
+  fi
+  aplay -q -D "${device}" "${SOUND}" >/dev/null 2>&1 || true
+fi
 EOF
 sudo install -m 0755 "${TEMP_DIR}/hdr-maxout-sound" "${HELPER}"
 
@@ -116,9 +181,7 @@ KS_PYTHON="${HOME}/.KlipperScreen-env/bin/python"
 [[ -x "${KS_PYTHON}" ]] || KS_PYTHON="$(command -v python3)"
 "${KS_PYTHON}" -m py_compile "${KS_GTK}"
 
-model=""
-[[ -r /proc/device-tree/model ]] && model="$(tr -d '\0' </proc/device-tree/model)"
-if [[ "${model}" == *"Compute Module 4"* ]]; then
+if [[ ${IS_CM4} -eq 1 ]]; then
   BOOT_CONFIG=""
   for candidate in /boot/firmware/config.txt /boot/config.txt; do
     [[ -f "${candidate}" ]] && { BOOT_CONFIG="${candidate}"; break; }
@@ -143,4 +206,7 @@ if [[ ${BOOT_CHANGED} -eq 1 ]]; then
   printf 'CM4 HDMI audio was enabled. Reboot the Pad 7 once before testing sound.\n'
 else
   printf 'Test: %s\n' "${HELPER}"
+fi
+if [[ ${IS_CM4} -eq 1 ]]; then
+  printf 'CM4 audio: PipeWire + WirePlumber, HDMI0 default, 100%% volume, suspend disabled.\n'
 fi
