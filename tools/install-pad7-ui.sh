@@ -73,22 +73,38 @@ if [[ -f /etc/X11/xorg.conf.d/91-hdr-pad7-touchscreen.conf ]]; then
     "/etc/X11/xorg.conf.d/91-hdr-pad7-touchscreen.conf.hdr-backup-${STAMP}"
 fi
 
-SERVICE_TMP="$(mktemp)"
-cat >"${SERVICE_TMP}" <<'EOF'
+if systemctl cat hdr-pad7-rotate.service >/dev/null 2>&1; then
+  # Retire the earlier cycle-style service without invoking its old "next"
+  # action. A temporary drop-in clears ExecStop before the unit is stopped.
+  sudo systemctl disable hdr-pad7-rotate.service || true
+  sudo install -d -m 0755 /etc/systemd/system/hdr-pad7-rotate.service.d
+  printf '[Service]\nExecStop=\nExecStop=/usr/bin/true\n' | \
+    sudo tee /etc/systemd/system/hdr-pad7-rotate.service.d/retire.conf >/dev/null
+  sudo systemctl daemon-reload
+  sudo systemctl stop hdr-pad7-rotate.service || true
+  sudo rm -rf /etc/systemd/system/hdr-pad7-rotate.service.d
+  sudo rm -f /etc/systemd/system/hdr-pad7-rotate.service
+fi
+
+for ORIENTATION in 0 90 180 270; do
+  SERVICE_TMP="$(mktemp)"
+  cat >"${SERVICE_TMP}" <<EOF
 [Unit]
-Description=HDR Performance Pad 7 rotation control
+Description=HDR Performance Pad 7 explicit ${ORIENTATION}-degree orientation
 
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/true
-ExecStop=/usr/bin/env HDR_PAD7_SERVICE_STOP=1 /usr/local/sbin/hdr-pad7-rotate next
+ExecStop=/usr/bin/env HDR_PAD7_SERVICE_STOP=1 /usr/local/sbin/hdr-pad7-rotate ${ORIENTATION}
 RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
 EOF
-sudo install -m 0644 "${SERVICE_TMP}" /etc/systemd/system/hdr-pad7-rotate.service
-rm -f -- "${SERVICE_TMP}"
+  sudo install -m 0644 "${SERVICE_TMP}" \
+    "/etc/systemd/system/hdr-pad7-rotate-${ORIENTATION}.service"
+  rm -f -- "${SERVICE_TMP}"
+done
 
 mkdir -p "${CONFIG_DIR}" "$(dirname "${ASVC_FILE}")"
 if [[ -f "${KLIPPERSCREEN_CONFIG}" ]]; then
@@ -123,11 +139,29 @@ enable: {{ printer.gcode_macros.count > 0 }}
 name: Screen Rotation
 icon: settings
 
-[menu __main more hdr_rotation rotate]
-name: Rotate Screen 90 Degrees
+[menu __main more hdr_rotation original]
+name: Original Landscape
 icon: refresh
 method: machine.services.restart
-params: {"service":"hdr-pad7-rotate"}
+params: {"service":"hdr-pad7-rotate-0"}
+
+[menu __main more hdr_rotation portrait_right]
+name: Portrait Right
+icon: refresh
+method: machine.services.restart
+params: {"service":"hdr-pad7-rotate-90"}
+
+[menu __main more hdr_rotation landscape_inverted]
+name: Inverted Landscape
+icon: refresh
+method: machine.services.restart
+params: {"service":"hdr-pad7-rotate-180"}
+
+[menu __main more hdr_rotation portrait_left]
+name: Portrait Left
+icon: refresh
+method: machine.services.restart
+params: {"service":"hdr-pad7-rotate-270"}
 # HDR Performance Pad 7 controls end
 EOF
 
@@ -149,10 +183,18 @@ install -m 0644 "${MENU_TMP}" "${KLIPPERSCREEN_CONFIG}"
 rm -f -- "${MENU_CLEAN}" "${MENU_BLOCK}" "${MENU_TMP}"
 
 touch "${ASVC_FILE}"
-grep -qxF 'hdr-pad7-rotate' "${ASVC_FILE}" || printf '%s\n' 'hdr-pad7-rotate' >>"${ASVC_FILE}"
+sed -i '/^hdr-pad7-rotate$/d' "${ASVC_FILE}"
+for ORIENTATION in 0 90 180 270; do
+  SERVICE_NAME="hdr-pad7-rotate-${ORIENTATION}"
+  grep -qxF "${SERVICE_NAME}" "${ASVC_FILE}" || printf '%s\n' "${SERVICE_NAME}" >>"${ASVC_FILE}"
+done
 
 sudo systemctl daemon-reload
-sudo systemctl enable --now hdr-pad7-rotate.service
+sudo systemctl enable --now \
+  hdr-pad7-rotate-0.service \
+  hdr-pad7-rotate-90.service \
+  hdr-pad7-rotate-180.service \
+  hdr-pad7-rotate-270.service
 
 if [[ ! -f /etc/hdr-pad7-rotation.state ]]; then
   sudo /usr/local/sbin/hdr-pad7-rotate 0
@@ -166,7 +208,7 @@ sudo systemctl restart moonraker.service
 printf '\nHDR Performance Pad 7 controls installed.\n'
 printf 'Display: %s\nTouchscreen: %s\n' "${DISPLAY_CONNECTOR}" "${TOUCH_NAME}"
 printf 'Touchscreen mounting offset: %s degrees\n' "${TOUCH_OFFSET}"
-printf 'KlipperScreen: More > Screen Rotation > Rotate Screen 90 Degrees\n'
+printf 'KlipperScreen: More > Screen Rotation > choose an explicit orientation\n'
 printf 'KlipperScreen: Main Menu > Macros\n'
 printf 'Motor release: Move > Disable Motors (the motor-off icon beside Home).\n'
 printf 'After releasing motors, home again before any controlled move.\n'
