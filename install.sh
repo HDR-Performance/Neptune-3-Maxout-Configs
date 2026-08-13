@@ -9,6 +9,7 @@ BACKUP_ROOT="${HDR_BACKUP_ROOT:-${HOME}/printer_data/config_backups}"
 PACKAGE_ID=""
 MCU_ID=""
 HOST_TYPE="auto"
+PAD7_UI_MODE="${HDR_PAD7_UI:-auto}"
 ASSUME_YES=0
 DRY_RUN=0
 TEMP_DIR=""
@@ -43,6 +44,7 @@ Options:
   --package ID       Skip the menu and select a package ID.
   --mcu-id PATH      SKR only: replace the MCU placeholder with this exact path.
   --host TYPE        Pad host: auto (default), cb1, or cm4.
+  --pad7-ui MODE     Pad 7 controls: auto (default), on, or off.
   --config-dir PATH  Override ~/printer_data/config.
   --dry-run          Download and inspect, but do not change the printer.
   --yes              Skip the final INSTALL confirmation. Does not guess an MCU ID.
@@ -243,11 +245,48 @@ replace_skr_mcu_id() {
   fi
 }
 
+pad7_ui_detected() {
+  command -v systemctl >/dev/null 2>&1 || return 1
+  command -v xrandr >/dev/null 2>&1 || return 1
+  command -v xinput >/dev/null 2>&1 || return 1
+  systemctl cat KlipperScreen.service >/dev/null 2>&1 || return 1
+  DISPLAY=:0 xrandr --query 2>/dev/null | grep -q '1024x600' || return 1
+  DISPLAY=:0 xinput list --name-only 2>/dev/null | grep -Eiq 'BTT-HDMI7' || return 1
+}
+
+install_pad7_ui() {
+  local ui_dir="${TEMP_DIR}/pad7-ui"
+  local ui_installer="${ui_dir}/install-pad7-ui.sh"
+
+  case "${PAD7_UI_MODE}" in
+    off)
+      info "Pad 7 display/touch controls disabled by --pad7-ui off"
+      return 0
+      ;;
+    auto)
+      if ! pad7_ui_detected; then
+        info "Pad 7 display/touch hardware not detected; UI controls were not changed"
+        return 0
+      fi
+      ;;
+    on) ;;
+    *) die "--pad7-ui must be auto, on, or off." ;;
+  esac
+
+  info "Installing Pad 7 screen, touchscreen, macro-menu, and motor controls"
+  mkdir -p "${ui_dir}"
+  download_file "${RAW_BASE}/tools/install-pad7-ui.sh" "${ui_installer}"
+  download_file "${RAW_BASE}/tools/hdr-pad7-rotate" "${ui_dir}/hdr-pad7-rotate"
+  chmod +x "${ui_installer}" "${ui_dir}/hdr-pad7-rotate"
+  HDR_CONFIG_DIR="${CONFIG_DIR}" HDR_RAW_BASE="${RAW_BASE}" "${ui_installer}"
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --package) [[ $# -ge 2 ]] || die "--package requires a value."; PACKAGE_ID="$2"; shift 2 ;;
     --mcu-id) [[ $# -ge 2 ]] || die "--mcu-id requires a value."; MCU_ID="$2"; shift 2 ;;
     --host) [[ $# -ge 2 ]] || die "--host requires a value."; HOST_TYPE="$2"; shift 2 ;;
+    --pad7-ui) [[ $# -ge 2 ]] || die "--pad7-ui requires a value."; PAD7_UI_MODE="$2"; shift 2 ;;
     --config-dir) [[ $# -ge 2 ]] || die "--config-dir requires a value."; CONFIG_DIR="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
     --yes) ASSUME_YES=1; shift ;;
@@ -262,12 +301,14 @@ validate_config_dir
 [[ -n "${PACKAGE_ID}" ]] || select_package
 resolve_package
 resolve_host_type
+case "${PAD7_UI_MODE}" in auto|on|off) ;; *) die "--pad7-ui must be auto, on, or off." ;; esac
 
 printf '\nHDR Performance Neptune 3 installer\n'
 printf 'Package:    %s\n' "${PACKAGE_LABEL}"
 printf 'Config dir: %s\n' "${CONFIG_DIR}"
 printf 'Source:     %s/%s\n' "${RAW_BASE}" "${ZIP_NAME}"
 printf 'Pad host:   %s\n' "${HOST_TYPE}"
+printf 'Pad 7 UI:   %s\n' "${PAD7_UI_MODE}"
 if [[ ${FRESH_INSTALL} -eq 1 ]]; then
   printf 'Mode:       fresh install (no existing printer.cfg)\n'
 fi
@@ -318,6 +359,13 @@ adapt_host_config "${SOURCE_CONFIG}/printer.cfg"
 if [[ ${DRY_RUN} -eq 1 ]]; then
   info "Dry run successful; no printer files were changed"
   find "${SOURCE_CONFIG}" -maxdepth 3 -type f -print | sed "s|${SOURCE_CONFIG}/||" | sort
+  if [[ "${PAD7_UI_MODE}" == "off" ]]; then
+    printf 'Pad 7 UI: disabled\n'
+  elif pad7_ui_detected; then
+    printf 'Pad 7 UI: detected; controls would be installed\n'
+  else
+    printf 'Pad 7 UI: not detected in this session\n'
+  fi
   exit 0
 fi
 
@@ -372,6 +420,8 @@ else
   rm -f -- "${RESTORE_SCRIPT}"
 fi
 
+install_pad7_ui
+
 printf 'Backup: %s\n' "${BACKUP_DIR}"
 printf 'Docs:   %s\n' "${DOC_DIR}"
 printf '\nKlipper was NOT restarted. Before restarting:\n'
@@ -379,5 +429,6 @@ printf '  1. Open printer.cfg in Mainsail and verify the printer model and contr
 printf '  2. For SKR, verify the MCU serial line and all wiring/pins.\n'
 printf '  3. Read HDR_Documentation/START_HERE.md.\n'
 printf '  4. Save, restart, and follow the controlled commissioning checklist.\n'
+printf '  5. On a Pad 7, use More > Screen Rotation for the four fixed orientations.\n'
 printf '\nRestore command if needed:\n'
 printf '  bash "%s" "%s"\n' "${RESTORE_SCRIPT}" "${BACKUP_DIR}"
