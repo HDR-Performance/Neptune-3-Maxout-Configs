@@ -2,6 +2,8 @@
 
 This section is specifically for a BTT Pad 7 whose original CB1 has been replaced by a Raspberry Pi CM4. Generic Raspberry Pi 4/CM4 host instructions are kept in [their own guide](13-raspberry-pi4-cm4-klipper-host.md).
 
+The tested screen-rotation and touchscreen controls now support both the original CB1 and a CM4. Their shared installation, mapping table, source-code links, and recovery instructions are in the dedicated [Pad 7 display and touchscreen guide](15-pad7-display-touch-controls.md).
+
 ## Pad 7 CM4 baseline
 
 The HDR CM4 setup uses:

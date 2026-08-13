@@ -18,13 +18,15 @@ This documentation consolidates the useful material from the two original HDR Pe
 8. [Learn the added macros and controls](09-feature-guide.md)
 9. Choose the matching host guide:
    - [Raspberry Pi 4 or generic CM4 Klipper host](13-raspberry-pi4-cm4-klipper-host.md)
-   - [BIGTREETECH Pad 7 with CM4, KlipperScreen, and rotation](14-pad7-cm4-klipperscreen.md)
+   - [BIGTREETECH Pad 7 with CM4 host setup](14-pad7-cm4-klipperscreen.md)
+   - [Pad 7 CB1/CM4 display and touchscreen controls](15-pad7-display-touch-controls.md)
 
 ## Upgrade and repair guides
 
 - [Neptune 3 Max X/Y stepper-motor upgrade](10-stepper-motor-upgrade.md)
 - [Moonraker recovery and general troubleshooting](11-troubleshooting.md)
 - [Pad 7 CM4 motor-release and screen-rotation controls](14-pad7-cm4-klipperscreen.md)
+- [Pad 7 CB1/CM4 display rotation and touchscreen mapping](15-pad7-display-touch-controls.md)
 
 ## What changed from the legacy guides
 

@@ -18,7 +18,7 @@ The package provides bounded park moves and state cleanup. Use the package's `PA
 
 KlipperScreen's **Move** panel places **Disable Motors** beside **Home**. Homing intentionally leaves the steppers energized so the machine retains its position. Use the protected Disable Motors button when you are finished, then home again before another controlled move. Do not append `M18`/`M84` to the homing macro automatically.
 
-Pad 7 CM4 owners can also install the paired [screen and touchscreen rotation controls](14-pad7-cm4-klipperscreen.md).
+Pad 7 CB1 and CM4 owners receive the paired [screen and touchscreen rotation controls](15-pad7-display-touch-controls.md) automatically when the GitHub installer detects the Pad 7 hardware.
 
 The Pad 7 CM4 UI installer places a **Macros** button on the KlipperScreen main menu. Klipper must be ready before the panel can populate. Macros beginning with `_` are internal helpers and remain hidden from the user-facing list.
 
