@@ -15,6 +15,8 @@ The HDR Performance installer downloads the selected package directly from GitHu
 9. Does **not** restart Klipper automatically.
 10. Downloads a restore helper and prints the exact backup path.
 
+If the Pad 7 has Moonraker/Mainsail configuration but no `printer.cfg` yet, the installer explicitly reports **fresh install** mode. It backs up the existing host files and then creates the missing printer configuration and nested directories.
+
 ## Recommended installation
 
 SSH into the Pad 7 or Raspberry Pi:
@@ -119,6 +121,8 @@ bash ~/hdr-neptune-restore.sh ~/printer_data/config_backups/BACKUP_DIRECTORY
 ```
 
 The restore helper creates another safety backup, requires the word `RESTORE`, replaces the complete config with the selected backup, and does not restart Klipper automatically.
+
+A backup made before a fresh install may intentionally contain no `printer.cfg`. Restoring it returns the Pad 7 to that original unconfigured state.
 
 ## Manual SSH method
 
