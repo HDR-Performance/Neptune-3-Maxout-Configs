@@ -49,6 +49,8 @@ More > Screen Rotation > Rotate Screen 90 Degrees
 
 Each press cycles clockwise through 0, 90, 180, and 270 degrees. KlipperScreen restarts so it can change between landscape and portrait layouts. This does not restart Klipper or move the printer.
 
+The installer also adds a permanent **Macros** button to the KlipperScreen main menu. KlipperScreen's default macro panel normally lives under **More**; the top-level button makes the HDR controls easier to find. Public macros such as `MANUAL_Z_OFFSET_ADJUST`, `LOAD_FILAMENT`, `TOGGLE_HEAT_SOAK`, and `MAINTENANCE_STATUS` are shown. Internal helper macros whose names begin with an underscore remain hidden intentionally.
+
 To force a known orientation over SSH:
 
 ```text
@@ -64,7 +66,7 @@ The tool writes:
 - `/etc/X11/xorg.conf.d/91-hdr-pad7-touchscreen.conf`
 - `/etc/hdr-pad7-rotation.state`
 - `/etc/systemd/system/hdr-pad7-rotate.service`
-- a marked custom menu block in `~/printer_data/config/KlipperScreen.conf`
+- a marked custom menu block before KlipperScreen's auto-generated section in `~/printer_data/config/KlipperScreen.conf`
 
 ## Verify rotation over SSH
 
