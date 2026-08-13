@@ -126,6 +126,8 @@ if [[ -f "${KLIPPERSCREEN_CONFIG}" ]]; then
     /^# HDR Performance Pad 7 rotation end$/ {skip=0; next}
     /^# HDR Performance Pad 7 controls begin$/ {skip=1; next}
     /^# HDR Performance Pad 7 controls end$/ {skip=0; next}
+    /^# HDR Performance Z calibration override begin$/ {skip=1; next}
+    /^# HDR Performance Z calibration override end$/ {skip=0; next}
     !skip {print}
   ' "${KLIPPERSCREEN_CONFIG}" >"${MENU_CLEAN}"
 fi
@@ -137,6 +139,17 @@ name: Macros
 icon: custom-script
 panel: gcode_macros
 enable: {{ printer.gcode_macros.count > 0 }}
+
+# Override KlipperScreen's stock More > Z Calibrate entry. The stock panel
+# starts PROBE_CALIBRATE directly and bypasses the Maxout nozzle-cleaning
+# sequence. KlipperScreen automatically opens its TESTZ panel when this macro
+# reaches manual-probe mode.
+[menu __main more zoffset]
+name: Z Calibrate + Clean
+icon: z-farther
+method: printer.gcode.script
+params: {"script":"MANUAL_Z_OFFSET_ADJUST"}
+enable: {{ 'MANUAL_Z_OFFSET_ADJUST' in printer.gcode_macros.list }}
 
 [menu __main more hdr_rotation]
 name: Screen Rotation
