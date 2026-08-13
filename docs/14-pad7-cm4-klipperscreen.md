@@ -61,7 +61,7 @@ sudo hdr-pad7-rotate 270
 The tool writes:
 
 - `/etc/X11/xorg.conf.d/90-hdr-pad7-monitor.conf`
-- `/etc/udev/rules.d/51-hdr-pad7-touchscreen.rules`
+- `/etc/X11/xorg.conf.d/91-hdr-pad7-touchscreen.conf`
 - `/etc/hdr-pad7-rotation.state`
 - `/etc/systemd/system/hdr-pad7-rotate.service`
 - a marked custom menu block in `~/printer_data/config/KlipperScreen.conf`
@@ -74,7 +74,7 @@ DISPLAY=:0 xinput list-props "BIQU BTT-HDMI7"
 cat /etc/hdr-pad7-rotation.state
 ```
 
-At 0 degrees, the output should be 1024 x 600 and the touch matrix should be the identity matrix. At 90 or 270 degrees, X11 reports a portrait-size desktop and the touch matrix changes with it.
+At 0 degrees, the output should be 1024 x 600 and **Coordinate Transformation Matrix** should be the identity matrix. At 90 or 270 degrees, X11 reports a portrait-size desktop and that coordinate matrix changes with it. The add-on uses one Xorg `TransformationMatrix`; it removes the older HDR udev calibration rule to prevent conflicting or ineffective transformations.
 
 ## Recovery if touch or picture orientation is wrong
 
