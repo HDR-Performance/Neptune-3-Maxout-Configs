@@ -1,5 +1,7 @@
 # Neptune 3 Maxout Configs
 
+![Neptune Maxout by HDR Performance](assets/neptune-maxout-banner.png)
+
 Klipper upgrade packages for the Elegoo Neptune 3, Neptune 3 Pro, Neptune 3 Plus, and Neptune 3 Max, built and maintained by **HDR Performance**.
 
 This repository consolidates the working packages and guides previously spread across:
@@ -21,6 +23,7 @@ The legacy tutorials have been rebuilt as a structured, corrected documentation 
 - **[Set up a Raspberry Pi 4 or generic CM4 host](docs/13-raspberry-pi4-cm4-klipper-host.md)**
 - **[Set up a Pad 7 CM4, motor controls, and screen rotation](docs/14-pad7-cm4-klipperscreen.md)**
 - **[Set up tested Pad 7 CB1/CM4 display and touchscreen controls](docs/15-pad7-display-touch-controls.md)**
+- **[Install the Neptune Maxout KlipperScreen theme](docs/16-neptune-maxout-klipperscreen-theme.md)**
 - [Choose the correct printer/controller package](docs/01-choose-the-correct-package.md)
 - [Install a package safely](docs/02-install-a-package.md)
 - [Build Robin Nano firmware](docs/03-robin-nano-firmware.md)
@@ -86,6 +89,7 @@ Every ZIP contains `START_HERE.md`, a model-specific installation sequence, wiri
 - Model-specific homing, mesh, motion envelope, and screw locations
 - Organized `custom/kamp`, `custom/macros`, and `custom/state` directories
 - Automatic Pad 7 CB1/CM4 screen rotation with the tested matching touchscreen matrix
+- Neptune Maxout Pad 7 theme with branded background, red/charcoal controls, and a printer badge
 
 ## Corrected SKR 3 EZ details
 

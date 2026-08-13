@@ -10,6 +10,7 @@ PACKAGE_ID=""
 MCU_ID=""
 HOST_TYPE="auto"
 PAD7_UI_MODE="${HDR_PAD7_UI:-auto}"
+PAD7_THEME_MODE="${HDR_PAD7_THEME:-auto}"
 ASSUME_YES=0
 DRY_RUN=0
 TEMP_DIR=""
@@ -45,6 +46,7 @@ Options:
   --mcu-id PATH      SKR only: replace the MCU placeholder with this exact path.
   --host TYPE        Pad host: auto (default), cb1, or cm4.
   --pad7-ui MODE     Pad 7 controls: auto (default), on, or off.
+  --pad7-theme MODE  Neptune Maxout theme: auto (default), on, or off.
   --config-dir PATH  Override ~/printer_data/config.
   --dry-run          Download and inspect, but do not change the printer.
   --yes              Skip the final INSTALL confirmation. Does not guess an MCU ID.
@@ -287,12 +289,43 @@ install_pad7_ui() {
   fi
 }
 
+install_pad7_theme() {
+  local theme_installer="${TEMP_DIR}/install-neptune-maxout-theme.sh"
+
+  case "${PAD7_THEME_MODE}" in
+    off)
+      info "Neptune Maxout theme disabled by --pad7-theme off"
+      return 0
+      ;;
+    auto)
+      if ! pad7_ui_detected; then
+        info "Pad 7 display/touch hardware not detected; Neptune Maxout theme was not changed"
+        return 0
+      fi
+      ;;
+    on) ;;
+    *) die "--pad7-theme must be auto, on, or off." ;;
+  esac
+
+  info "Installing the Neptune Maxout KlipperScreen theme"
+  download_file "${RAW_BASE}/tools/install-neptune-maxout-theme.sh" "${theme_installer}"
+  chmod +x "${theme_installer}"
+  if ! HDR_CONFIG_DIR="${CONFIG_DIR}" HDR_RAW_BASE="${RAW_BASE}" "${theme_installer}"; then
+    if [[ "${PAD7_THEME_MODE}" == "on" ]]; then
+      die "Required Neptune Maxout theme installation failed. Printer files remain backed up at ${BACKUP_DIR}."
+    fi
+    printf 'WARNING: The printer package is installed, but the optional Neptune Maxout theme failed.\n' >&2
+    printf 'Follow docs/16-neptune-maxout-klipperscreen-theme.md to install it manually.\n' >&2
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --package) [[ $# -ge 2 ]] || die "--package requires a value."; PACKAGE_ID="$2"; shift 2 ;;
     --mcu-id) [[ $# -ge 2 ]] || die "--mcu-id requires a value."; MCU_ID="$2"; shift 2 ;;
     --host) [[ $# -ge 2 ]] || die "--host requires a value."; HOST_TYPE="$2"; shift 2 ;;
     --pad7-ui) [[ $# -ge 2 ]] || die "--pad7-ui requires a value."; PAD7_UI_MODE="$2"; shift 2 ;;
+    --pad7-theme) [[ $# -ge 2 ]] || die "--pad7-theme requires a value."; PAD7_THEME_MODE="$2"; shift 2 ;;
     --config-dir) [[ $# -ge 2 ]] || die "--config-dir requires a value."; CONFIG_DIR="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
     --yes) ASSUME_YES=1; shift ;;
@@ -308,6 +341,7 @@ validate_config_dir
 resolve_package
 resolve_host_type
 case "${PAD7_UI_MODE}" in auto|on|off) ;; *) die "--pad7-ui must be auto, on, or off." ;; esac
+case "${PAD7_THEME_MODE}" in auto|on|off) ;; *) die "--pad7-theme must be auto, on, or off." ;; esac
 
 printf '\nHDR Performance Neptune 3 installer\n'
 printf 'Package:    %s\n' "${PACKAGE_LABEL}"
@@ -315,6 +349,7 @@ printf 'Config dir: %s\n' "${CONFIG_DIR}"
 printf 'Source:     %s/%s\n' "${RAW_BASE}" "${ZIP_NAME}"
 printf 'Pad host:   %s\n' "${HOST_TYPE}"
 printf 'Pad 7 UI:   %s\n' "${PAD7_UI_MODE}"
+printf 'Pad 7 theme:%s\n' " ${PAD7_THEME_MODE}"
 if [[ ${FRESH_INSTALL} -eq 1 ]]; then
   printf 'Mode:       fresh install (no existing printer.cfg)\n'
 fi
@@ -372,6 +407,13 @@ if [[ ${DRY_RUN} -eq 1 ]]; then
   else
     printf 'Pad 7 UI: not detected in this session\n'
   fi
+  if [[ "${PAD7_THEME_MODE}" == "off" ]]; then
+    printf 'Pad 7 theme: disabled\n'
+  elif pad7_ui_detected; then
+    printf 'Pad 7 theme: detected; Neptune Maxout theme would be installed\n'
+  else
+    printf 'Pad 7 theme: not detected in this session\n'
+  fi
   exit 0
 fi
 
@@ -416,6 +458,7 @@ backup_dir=${BACKUP_DIR}
 source=${RAW_BASE}/${ZIP_NAME}
 pad_host=${HOST_TYPE}
 pad7_ui=${PAD7_UI_MODE}
+pad7_theme=${PAD7_THEME_MODE}
 EOF
 
 info "Installation files copied successfully"
@@ -428,6 +471,7 @@ else
 fi
 
 install_pad7_ui
+install_pad7_theme
 
 printf 'Backup: %s\n' "${BACKUP_DIR}"
 printf 'Docs:   %s\n' "${DOC_DIR}"
@@ -437,5 +481,6 @@ printf '  2. For SKR, verify the MCU serial line and all wiring/pins.\n'
 printf '  3. Read HDR_Documentation/START_HERE.md.\n'
 printf '  4. Save, restart, and follow the controlled commissioning checklist.\n'
 printf '  5. On a Pad 7, use More > Screen Rotation for the four fixed orientations.\n'
+printf '  6. The Neptune Maxout theme can be changed from KlipperScreen Settings.\n'
 printf '\nRestore command if needed:\n'
 printf '  bash "%s" "%s"\n' "${RESTORE_SCRIPT}" "${BACKUP_DIR}"
