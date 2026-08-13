@@ -11,6 +11,7 @@ MCU_ID=""
 ASSUME_YES=0
 DRY_RUN=0
 TEMP_DIR=""
+FRESH_INSTALL=0
 
 cleanup() {
   if [[ -n "${TEMP_DIR}" && -d "${TEMP_DIR}" ]]; then
@@ -152,9 +153,15 @@ validate_config_dir() {
   [[ -n "${HOME:-}" && "${HOME}" != "/" ]] || die "HOME is not safe or is not set."
   [[ -n "${CONFIG_DIR}" && "${CONFIG_DIR}" != "/" && "${CONFIG_DIR}" != "${HOME}" ]] || die "Unsafe config directory: ${CONFIG_DIR}"
   [[ -d "${CONFIG_DIR}" ]] || die "Config directory does not exist: ${CONFIG_DIR}"
-  [[ -f "${CONFIG_DIR}/printer.cfg" ]] || die "No existing printer.cfg found in ${CONFIG_DIR}. Verify --config-dir."
   [[ "$(basename "${CONFIG_DIR}")" == "config" ]] || die "Config directory must end in /config: ${CONFIG_DIR}"
   CONFIG_DIR="$(cd "${CONFIG_DIR}" && pwd -P)"
+  if [[ ! -f "${CONFIG_DIR}/printer.cfg" ]]; then
+    if [[ -f "${CONFIG_DIR}/moonraker.conf" || -e "${CONFIG_DIR}/mainsail.cfg" ]]; then
+      FRESH_INSTALL=1
+    else
+      die "No printer.cfg or recognizable Moonraker/Mainsail config found in ${CONFIG_DIR}. Verify --config-dir."
+    fi
+  fi
 }
 
 replace_skr_mcu_id() {
@@ -218,6 +225,9 @@ printf '\nHDR Performance Neptune 3 installer\n'
 printf 'Package:    %s\n' "${PACKAGE_LABEL}"
 printf 'Config dir: %s\n' "${CONFIG_DIR}"
 printf 'Source:     %s/%s\n' "${RAW_BASE}" "${ZIP_NAME}"
+if [[ ${FRESH_INSTALL} -eq 1 ]]; then
+  printf 'Mode:       fresh install (no existing printer.cfg)\n'
+fi
 
 if [[ ${ASSUME_YES} -ne 1 ]]; then
   printf '\nType INSTALL to download, back up, and copy this package: '
@@ -273,7 +283,18 @@ mkdir -p "${BACKUP_DIR}"
 
 info "Backing up the complete existing config to ${BACKUP_DIR}"
 cp -a "${CONFIG_DIR}/." "${BACKUP_DIR}/"
-[[ -f "${BACKUP_DIR}/printer.cfg" ]] || die "Backup verification failed; installation stopped."
+if [[ ${FRESH_INSTALL} -eq 1 ]]; then
+  [[ -n "$(find "${BACKUP_DIR}" -mindepth 1 -maxdepth 1 -print -quit)" ]] || die "Fresh-install backup is empty; installation stopped."
+else
+  [[ -f "${BACKUP_DIR}/printer.cfg" ]] || die "Backup verification failed; installation stopped."
+fi
+
+cat > "${BACKUP_DIR}/.hdr-backup-info" <<EOF
+created_at=${timestamp}
+package_id=${PACKAGE_ID}
+fresh_install=${FRESH_INSTALL}
+source_config=${CONFIG_DIR}
+EOF
 
 info "Replacing HDR-managed files and preserving other host configuration"
 rm -rf -- "${CONFIG_DIR}/custom"
