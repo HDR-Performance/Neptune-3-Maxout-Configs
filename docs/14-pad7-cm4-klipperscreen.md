@@ -46,10 +46,10 @@ chmod +x install-pad7-ui.sh
 After installation, use:
 
 ```text
-More > Screen Rotation > Rotate Screen 90 Degrees
+More > Screen Rotation
 ```
 
-Each press cycles clockwise through 0, 90, 180, and 270 degrees. KlipperScreen restarts so it can change between landscape and portrait layouts. This does not restart Klipper or move the printer.
+Choose **Original Landscape**, **Portrait Right**, **Inverted Landscape**, or **Portrait Left**. These are explicit settings: selecting Portrait Right again keeps the screen at 90 degrees instead of advancing it another 90 degrees. **Original Landscape** always restores the factory screen orientation. KlipperScreen restarts so it can change between landscape and portrait layouts. This does not restart Klipper or move the printer.
 
 The installer also adds a permanent **Macros** button to the KlipperScreen main menu. KlipperScreen's default macro panel normally lives under **More**; the top-level button makes the HDR controls easier to find. Public macros such as `MANUAL_Z_OFFSET_ADJUST`, `LOAD_FILAMENT`, `TOGGLE_HEAT_SOAK`, and `MAINTENANCE_STATUS` are shown. Internal helper macros whose names begin with an underscore remain hidden intentionally.
 
@@ -67,7 +67,7 @@ The tool writes:
 - `/etc/X11/xorg.conf.d/90-hdr-pad7-monitor.conf`
 - `/etc/X11/xorg.conf.d/91-hdr-pad7-touchscreen.conf`
 - `/etc/hdr-pad7-rotation.state`
-- `/etc/systemd/system/hdr-pad7-rotate.service`
+- `/etc/systemd/system/hdr-pad7-rotate-{0,90,180,270}.service`
 - a marked custom menu block before KlipperScreen's auto-generated section in `~/printer_data/config/KlipperScreen.conf`
 
 ## Verify rotation over SSH
