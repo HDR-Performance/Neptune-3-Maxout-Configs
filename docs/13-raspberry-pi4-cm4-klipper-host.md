@@ -70,6 +70,10 @@ A valid response contains changing X/Y/Z acceleration values. An SPI error, cons
 
 ## Install the HDR printer configuration
 
-Follow the [SSH installer guide](12-ssh-installer.md). The package installer detects a CM4 and adapts the packaged Pad host block where supported. It does not guess generic carrier-board wiring.
+For a normal Raspberry Pi 4, follow the [simple Pi 4 SSH guide](18-raspberry-pi4-ssh-install.md) and use `--host pi4`. The installer removes the Pad 7-only host MCU and accelerometer blocks, while keeping the saved input-shaper values so the printer can operate without a calibration sensor attached.
+
+The installer does not guess generic accelerometer wiring. If a separate ADXL345 is installed later, add its host configuration only after confirming its actual SPI bus, chip-select pin, orientation, and a successful `ACCELEROMETER_QUERY`.
+
+For a Pad 7 upgraded to CM4, use `--host cm4` and follow the dedicated [Pad 7 CM4 guide](14-pad7-cm4-klipperscreen.md).
 
 Return to the [documentation index](README.md).

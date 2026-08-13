@@ -18,6 +18,7 @@ This documentation consolidates the useful material from the two original HDR Pe
 8. [Learn the added macros and controls](09-feature-guide.md)
 9. Choose the matching host guide:
    - [Raspberry Pi 4 or generic CM4 Klipper host](13-raspberry-pi4-cm4-klipper-host.md)
+   - [Simple Raspberry Pi 4 SSH installation](18-raspberry-pi4-ssh-install.md)
    - [BIGTREETECH Pad 7 with CM4 host setup](14-pad7-cm4-klipperscreen.md)
    - [Pad 7 CB1/CM4 display and touchscreen controls](15-pad7-display-touch-controls.md)
    - [Neptune Maxout KlipperScreen theme](16-neptune-maxout-klipperscreen-theme.md)
@@ -31,6 +32,7 @@ This documentation consolidates the useful material from the two original HDR Pe
 - [Pad 7 CB1/CM4 display rotation and touchscreen mapping](15-pad7-display-touch-controls.md)
 - [Neptune Maxout branded KlipperScreen theme](16-neptune-maxout-klipperscreen-theme.md)
 - [Pad 7 CM4/CB1 speaker audio and themed button sounds](17-pad7-sound.md)
+- [Safe Raspberry Pi 4 host adaptation and SSH install](18-raspberry-pi4-ssh-install.md)
 
 ## What changed from the legacy guides
 

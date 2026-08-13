@@ -18,7 +18,7 @@ The HDR CM4 setup uses:
 
 The package installer adapts `[mcu CB1]`, `CB1:None`, and `spidev1.1` to the CM4 equivalents. The one-time operating-system setup still must be completed on the Pad.
 
-The Neptune Maxout theme installer also enables HDMI audio and installs original laser-style button feedback. CM4 and CB1 audio behavior, verification, and recovery are documented in the dedicated [Pad 7 sound guide](17-pad7-sound.md).
+The Neptune Maxout theme installer also enables HDMI audio and installs original laser-style button feedback. On CM4 it now reproduces the hardware-tested PipeWire/WirePlumber setup: HDMI0 is selected, the sink is set to full volume, and HDMI suspension is disabled so short button sounds play immediately. CM4 and CB1 audio behavior, verification, and recovery are documented in the dedicated [Pad 7 sound guide](17-pad7-sound.md).
 
 ## Motor controls after homing
 

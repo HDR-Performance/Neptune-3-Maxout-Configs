@@ -2,7 +2,7 @@
 
 The Neptune Maxout theme includes an original short retro toy-laser chirp for KlipperScreen button presses. It supports both Pad 7 host choices:
 
-- **CM4:** audio is sent through HDMI to the Pad 7 display controller, then to its built-in amplifier and speaker.
+- **CM4:** audio is sent through HDMI0 to the Pad 7 display controller, then to its built-in amplifier and speaker. The tested setup uses PipeWire and WirePlumber so short interface sounds are not lost while the HDMI device wakes.
 - **CB1:** the installer keeps the CB1 system's normal default speaker output.
 
 The normal GitHub installer enables this automatically whenever it detects a Pad 7 and installs the Neptune Maxout theme. The change does not affect Klipper motion, MCU pins, heaters, or printer wiring.
@@ -21,12 +21,14 @@ chmod +x install-pad7-audio.sh
 
 The installer:
 
-1. Requires an existing KlipperScreen installation and `aplay` from `alsa-utils`.
+1. Requires an existing KlipperScreen installation. CB1 uses `aplay`; CM4 installs the tested PipeWire/WirePlumber audio stack when it is missing.
 2. Installs `maxout-laser.wav` under `/usr/local/share/neptune-maxout/sounds/`.
 3. Installs a non-blocking player at `/usr/local/bin/hdr-maxout-sound`.
 4. Creates a timestamped backup of `KlippyGtk.py` and hooks its central button factory, so standard buttons and macro buttons use the same feedback.
-5. On CM4 only, backs up the active boot config and changes `hdmi_drive=1` to `hdmi_drive=2` so the Pad 7 HDMI audio path is enabled.
-6. Compiles the modified Python file before restarting KlipperScreen.
+5. On CM4 only, installs a WirePlumber rule that keeps the HDMI node ready for short sounds by setting `session.suspend-timeout-seconds = 0` and `node.pause-on-idle = false`.
+6. On CM4 only, enables the PipeWire, PipeWire-Pulse, and WirePlumber user services; selects HDMI0; and sets the sink to 100%.
+7. On CM4 only, backs up the active boot config and changes `hdmi_drive=1` to `hdmi_drive=2` so the Pad 7 HDMI audio path is enabled.
+8. Compiles the modified Python file before restarting KlipperScreen.
 
 If the CM4 HDMI mode changed, reboot the Pad once:
 
@@ -42,13 +44,23 @@ Play the sound directly:
 /usr/local/bin/hdr-maxout-sound
 ```
 
-Confirm the CM4 HDMI playback device:
+Confirm the CM4 audio services and HDMI sink:
 
 ```text
-aplay -l
+systemctl --user is-active pipewire pipewire-pulse wireplumber
+wpctl status -n
+wpctl get-volume @DEFAULT_AUDIO_SINK@
 ```
 
-The CM4 result should include `vc4-hdmi-0`. Confirm that the display is on HDMI-A-1 and that the Pad's physical volume is raised. The sound helper uses `plughw:CARD=vc4hdmi0,DEV=0` on CM4 and the normal default ALSA device on CB1.
+All three services should report `active`. The default sink (marked with `*`) should be the first HDMI controller, normally named similar to `alsa_output.platform-fef00700.hdmi.hdmi-stereo`, and the volume should show `1.00`. The CM4 helper uses `pw-play`; CB1 retains its normal ALSA output.
+
+The tested CM4 WirePlumber settings are stored in:
+
+```text
+~/.config/wireplumber/wireplumber.conf.d/51-hdr-pad7-hdmi.conf
+```
+
+If the direct test works but buttons do not make sound, verify that KlipperScreen is using `theme: neptune-maxout`, then re-run the standalone installer to restore the button hook after a KlipperScreen update.
 
 The helper only plays when `theme: neptune-maxout` is selected in `KlipperScreen.conf`. Changing to another KlipperScreen theme therefore makes the UI silent without deleting the sound files or source backup.
 
@@ -57,6 +69,7 @@ The helper only plays when `theme: neptune-maxout` is selected in `KlipperScreen
 The installer creates these recoverable backups before editing:
 
 - `~/KlipperScreen/ks_includes/KlippyGtk.py.hdr-audio-backup-YYYYMMDD-HHMMSS`
+- `~/.config/wireplumber/wireplumber.conf.d/51-hdr-pad7-hdmi.conf.hdr-audio-backup-YYYYMMDD-HHMMSS` when an older HDR audio rule existed
 - `/boot/firmware/config.txt.hdr-audio-backup-YYYYMMDD-HHMMSS` on current Raspberry Pi OS, or the matching `/boot/config.txt` path on older images
 
 Restore the newest `KlippyGtk.py` backup and restart KlipperScreen if a later upstream KlipperScreen update changes its button factory. Re-run this installer after KlipperScreen updates to restore the theme sound hook against the new source.

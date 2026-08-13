@@ -12,11 +12,12 @@ The HDR Performance installer downloads the selected package directly from GitHu
 6. Preserves other host files such as `moonraker.conf`, `mainsail.cfg`, `crowsnest.conf`, and timelapse settings.
 7. Copies the package guides into `config/HDR_Documentation` for viewing in Mainsail.
 8. Offers to insert the SKR MCU serial when exactly one `/dev/serial/by-id/` device is detected.
-9. Detects a Raspberry Pi CM4 and changes the Pad 7 host-MCU/ADXL settings from `CB1`/`spidev1.1` to `CM4`/`spidev0.1`.
-10. Detects the physical Pad 7 display and BTT-HDMI7 touchscreen, then installs the tested four-orientation KlipperScreen controls automatically on either CB1 or CM4.
-11. Installs and selects the Neptune Maxout KlipperScreen theme by default when Pad 7 hardware is detected.
-10. Does **not** restart Klipper automatically.
-11. Downloads a restore helper and prints the exact backup path.
+9. Detects a Raspberry Pi 4 and removes Pad 7-only host-MCU/ADXL sections so the configuration starts safely without nonexistent Pad hardware.
+10. Detects a Raspberry Pi CM4 and changes the Pad 7 host-MCU/ADXL settings from `CB1`/`spidev1.1` to `CM4`/`spidev0.1`.
+11. Detects the physical Pad 7 display and BTT-HDMI7 touchscreen, then installs the tested four-orientation KlipperScreen controls automatically on either CB1 or CM4.
+12. Installs and selects the Neptune Maxout KlipperScreen theme by default when Pad 7 hardware is detected.
+13. Does **not** restart Klipper automatically.
+14. Downloads a restore helper and prints the exact backup path.
 
 If the Pad 7 has Moonraker/Mainsail configuration but no `printer.cfg` yet, the installer explicitly reports **fresh install** mode. It backs up the existing host files and then creates the missing printer configuration and nested directories.
 
@@ -107,7 +108,15 @@ The Pad host is detected automatically. It may also be selected explicitly:
   --mcu-id /dev/serial/by-id/usb-Klipper_stm32h723xx_EXAMPLE-if00
 ```
 
-Valid host values are `auto`, `cb1`, and `cm4`. On CM4, the installer adapts the package to `[mcu CM4]`, `cs_pin: CM4:None`, and `spi_bus: spidev0.1`. The CM4 Linux host-MCU service and Pad 7 boot/display settings still need to be installed once by following the BIGTREETECH Pad 7 and Klipper host-MCU guides.
+Valid host values are `auto`, `cb1`, `cm4`, and `pi4`. On a Pad 7 CM4, the installer adapts the package to `[mcu CM4]`, `cs_pin: CM4:None`, and `spi_bus: spidev0.1`. With `--host pi4`, it removes the Pad 7 host-MCU, ADXL345, and resonance-tester blocks while retaining the saved input-shaper values. This lets a normal Pi 4 installation start without pretending the Pad 7's built-in accelerometer exists. See the [simple Raspberry Pi 4 SSH guide](18-raspberry-pi4-ssh-install.md).
+
+For a normal Raspberry Pi 4, the recommended one-command selection is:
+
+```text
+./hdr-neptune-install.sh --package neptune3max-robin --host pi4 --pad7-ui off --pad7-theme off
+```
+
+Replace the package ID with the exact printer/controller combination. SKR users must also provide their real `--mcu-id` value.
 
 Pad 7 screen and touch controls use `--pad7-ui auto` by default. Auto mode requires the live 1024 x 600 Pad 7 display, KlipperScreen, and BTT-HDMI7 touchscreen before it changes the UI. Use `--pad7-ui on` to require the feature or `--pad7-ui off` to leave display settings untouched. See the [Pad 7 CB1/CM4 display and touchscreen guide](15-pad7-display-touch-controls.md).
 
