@@ -2,6 +2,8 @@
 
 The packages include the Pad 7 host-MCU and ADXL345 configuration used by the HDR setup. Input-shaper values are machine-specific and must be measured after belts, motors, toolhead mass, bed mounting, or frame hardware changes.
 
+The Neptune 3 Max SKR 3 EZ/TMC5160 Pro package includes the recent known-good baseline from the documented upgraded HDR Maxout machine: `ei` at X `50.0 Hz` and Y `40.2 Hz`. It is enabled by default so that exact build does not silently run with zero shaper frequency. Recalibrate instead of copying those numbers to a stock Robin Nano printer or a machine with different motors, belts, frame bracing, bed mass, or toolhead mass.
+
 ## Before testing
 
 - Tighten the frame, toolhead, bed, pulleys, and motor mounts.

@@ -14,8 +14,11 @@ The HDR CM4 setup uses:
 - Linux Klipper host MCU at `/tmp/klipper_host_mcu`
 - Pad 7 ADXL345 through the CM4 host as `spidev0.1`
 - LCD backlight on GPIO14
+- Pad 7 built-in speaker through the CM4 HDMI0 audio device
 
 The package installer adapts `[mcu CB1]`, `CB1:None`, and `spidev1.1` to the CM4 equivalents. The one-time operating-system setup still must be completed on the Pad.
+
+The Neptune Maxout theme installer also enables HDMI audio and installs original laser-style button feedback. CM4 and CB1 audio behavior, verification, and recovery are documented in the dedicated [Pad 7 sound guide](17-pad7-sound.md).
 
 ## Motor controls after homing
 

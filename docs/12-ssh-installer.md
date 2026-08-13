@@ -14,6 +14,7 @@ The HDR Performance installer downloads the selected package directly from GitHu
 8. Offers to insert the SKR MCU serial when exactly one `/dev/serial/by-id/` device is detected.
 9. Detects a Raspberry Pi CM4 and changes the Pad 7 host-MCU/ADXL settings from `CB1`/`spidev1.1` to `CM4`/`spidev0.1`.
 10. Detects the physical Pad 7 display and BTT-HDMI7 touchscreen, then installs the tested four-orientation KlipperScreen controls automatically on either CB1 or CM4.
+11. Installs and selects the Neptune Maxout KlipperScreen theme by default when Pad 7 hardware is detected.
 10. Does **not** restart Klipper automatically.
 11. Downloads a restore helper and prints the exact backup path.
 
@@ -109,6 +110,8 @@ The Pad host is detected automatically. It may also be selected explicitly:
 Valid host values are `auto`, `cb1`, and `cm4`. On CM4, the installer adapts the package to `[mcu CM4]`, `cs_pin: CM4:None`, and `spi_bus: spidev0.1`. The CM4 Linux host-MCU service and Pad 7 boot/display settings still need to be installed once by following the BIGTREETECH Pad 7 and Klipper host-MCU guides.
 
 Pad 7 screen and touch controls use `--pad7-ui auto` by default. Auto mode requires the live 1024 x 600 Pad 7 display, KlipperScreen, and BTT-HDMI7 touchscreen before it changes the UI. Use `--pad7-ui on` to require the feature or `--pad7-ui off` to leave display settings untouched. See the [Pad 7 CB1/CM4 display and touchscreen guide](15-pad7-display-touch-controls.md).
+
+The branded theme similarly uses `--pad7-theme auto`. Theme installation includes the Pad 7 speaker setup and original Maxout laser button feedback on both CM4 and CB1. A CM4 may require the one reboot reported by the installer after HDMI audio is enabled. Use `--pad7-theme off` to retain the Pad's current theme and sound behavior, read the [Neptune Maxout theme guide](16-neptune-maxout-klipperscreen-theme.md), or use the dedicated [Pad 7 sound guide](17-pad7-sound.md).
 
 ## After installation
 
