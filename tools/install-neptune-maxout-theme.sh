@@ -156,6 +156,8 @@ for relative_path in \
   mkdir -p "$(dirname "${TEMP_DIR}/${relative_path}")"
   download_file "${RAW_BASE}/themes/${THEME_NAME}/${relative_path}" "${TEMP_DIR}/${relative_path}"
 done
+mkdir -p "${TEMP_DIR}/sounds"
+download_file "${RAW_BASE}/assets/maxout-laser.wav" "${TEMP_DIR}/sounds/maxout-laser.wav"
 
 [[ -s "${TEMP_DIR}/style.css" ]] || die "Theme stylesheet download is empty."
 [[ -s "${TEMP_DIR}/background-landscape.png" ]] || die "Landscape background download is empty."
@@ -172,6 +174,14 @@ cp -a "${SOURCE_ICON_DIR}/." "${THEME_DIR}/images/"
 cp -a "${TEMP_DIR}/." "${THEME_DIR}/"
 apply_orientation_background
 set_theme "${THEME_NAME}"
+
+download_file "${RAW_BASE}/tools/install-pad7-audio.sh" "${TEMP_DIR}/install-pad7-audio.sh"
+chmod +x "${TEMP_DIR}/install-pad7-audio.sh"
+HDR_CONFIG_DIR="${CONFIG_DIR}" \
+HDR_KLIPPERSCREEN_DIR="${KS_DIR}" \
+HDR_SOUND_FILE="${TEMP_DIR}/sounds/maxout-laser.wav" \
+HDR_RAW_BASE="${RAW_BASE}" \
+  "${TEMP_DIR}/install-pad7-audio.sh"
 
 sudo systemctl restart KlipperScreen.service
 printf '\nNeptune Maxout KlipperScreen theme installed.\n'
