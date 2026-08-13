@@ -20,6 +20,8 @@ KlipperScreen's **Move** panel places **Disable Motors** beside **Home**. Homing
 
 Pad 7 CM4 owners can also install the paired [screen and touchscreen rotation controls](14-pad7-cm4-klipperscreen.md).
 
+The Pad 7 CM4 UI installer places a **Macros** button on the KlipperScreen main menu. Klipper must be ready before the panel can populate. Macros beginning with `_` are internal helpers and remain hidden from the user-facing list.
+
 ## Manual Z-offset calibration
 
 Run:
