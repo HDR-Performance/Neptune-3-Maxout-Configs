@@ -33,7 +33,7 @@ KlipperScreen sends `M18`. Releasing a stepper invalidates the trusted position.
 
 The HDR rotation add-on rotates the X11 display and the digitizer calibration matrix together. It also creates timestamped backups before replacing an existing HDR rotation file.
 
-The Pad 7 digitizer is physically oriented 180 degrees from the LCD. The installer stores `HDR_PAD7_TOUCH_OFFSET="180"` and composes that mounting correction with every selected display rotation. For example, a 90-degree clockwise display uses a 270-degree touch matrix; this is expected.
+Physical testing of the BTT-HDMI7/Xorg combination shows that its landscape layouts need no additional digitizer correction, while its portrait layouts need a 180-degree correction. The installer stores `HDR_PAD7_LANDSCAPE_TOUCH_OFFSET="0"` and `HDR_PAD7_PORTRAIT_TOUCH_OFFSET="180"`, then composes the applicable value with the selected display rotation. A 90-degree clockwise display therefore uses a 270-degree touch matrix, while Original Landscape uses the identity matrix.
 
 ```text
 cd ~
@@ -78,7 +78,7 @@ DISPLAY=:0 xinput list-props "BIQU BTT-HDMI7"
 cat /etc/hdr-pad7-rotation.state
 ```
 
-At display rotation 0, the output should be 1024 x 600 and **Coordinate Transformation Matrix** should contain the Pad's 180-degree mounting correction. At display rotation 90, X11 reports a 600 x 1024 desktop and the touch matrix uses 270 degrees. The add-on uses one Xorg `TransformationMatrix`; it removes the older HDR udev calibration rule to prevent conflicting or ineffective transformations.
+At display rotation 0, the output should be 1024 x 600 and **Coordinate Transformation Matrix** should be the identity matrix. At display rotation 90, X11 reports a 600 x 1024 desktop and the touch matrix uses 270 degrees. At display rotation 180, both the display and touch matrix use 180 degrees. The add-on uses one Xorg `TransformationMatrix`; it removes the older HDR udev calibration rule to prevent conflicting or ineffective transformations.
 
 ## Recovery if touch or picture orientation is wrong
 
