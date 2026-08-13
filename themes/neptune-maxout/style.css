@@ -1,0 +1,193 @@
+/* Neptune Maxout theme for KlipperScreen by HDR Performance */
+@define-color text #f4f4f4;
+@define-color bg #09090a;
+@define-color buttons-bg rgba(8, 8, 10, 0.88);
+@define-color color1 #ff2020;
+@define-color color2 #c91524;
+@define-color color3 #ff6a00;
+@define-color color4 #8f9aa8;
+
+@define-color echo #14853b;
+@define-color warning #ff8a00;
+@define-color error #d71920;
+@define-color active #ff2020;
+@define-color active-dark rgba(48, 10, 13, 0.94);
+@define-color lines #b9bec6;
+@define-color slider #ff2020;
+
+* {
+    color: @text;
+}
+
+window {
+    background-color: @bg;
+    background-image: url("./styles/neptune-maxout/background.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+junction,
+list row,
+treeview.view {
+    background-color: rgba(9, 9, 10, 0.94);
+}
+
+button {
+    background-color: @buttons-bg;
+    border: 0.12em solid rgba(255, 32, 32, 0.38);
+    border-radius: 1em;
+}
+
+button.color1 {
+    background-color: @buttons-bg;
+    border-color: @color1;
+}
+
+button.color2 {
+    background-color: @buttons-bg;
+    border-color: @color2;
+}
+
+button.color3 {
+    background-color: @buttons-bg;
+    border-color: @color3;
+}
+
+button.color4 {
+    background-color: @buttons-bg;
+    border-color: @color4;
+}
+
+.button_active {
+    background-color: @active-dark;
+    border-width: 0.25em;
+    border-radius: 1em;
+}
+
+button:focus,
+button.color1:focus,
+button.color2:focus,
+button.color3:focus,
+button.color4:focus,
+button.update:focus,
+button.invalid:focus,
+.dialog button:focus {
+    outline: 0.12em solid @active;
+    outline-offset: 0.08em;
+}
+
+.active image,
+button.color1:active,
+button.color2:active,
+button.color3:active,
+button.color4:active,
+button.update:active,
+button.invalid:active,
+.dialog button:active {
+    border-style: none;
+    margin-top: 0.6em;
+}
+
+button.update,
+button.invalid {
+    background-color: @buttons-bg;
+    border: 0;
+    border-bottom: 0.3em solid;
+    border-radius: 0.75em;
+}
+
+button.update {
+    border-bottom-color: @echo;
+}
+
+button.invalid {
+    border-bottom-color: @error;
+}
+
+menu,
+menuitem,
+combobox button,
+combobox menuitem {
+    background-color: rgba(28, 9, 11, 0.98);
+    border-color: @bg;
+}
+
+treeview.view check,
+switch {
+    background-color: @active-dark;
+}
+
+treeview.view check:checked,
+switch:checked {
+    background-color: @active;
+}
+
+treeview.view check:checked {
+    -gtk-icon-source: url("./styles/neptune-maxout/images/complete.svg");
+}
+
+entry,
+trough {
+    background-color: @active-dark;
+    border-color: rgba(255, 32, 32, 0.25);
+}
+
+trough highlight,
+trough progress {
+    background-color: @slider;
+    color: @text;
+    border-color: @bg;
+}
+
+scrollbar,
+scrollbar button,
+scrollbar trough {
+    background-color: rgba(9, 9, 10, 0.92);
+}
+
+scrollbar slider {
+    background-color: #5f1820;
+}
+
+.dialog {
+    border: 0.12em solid @active;
+    background-color: rgba(9, 9, 10, 0.98);
+}
+
+.dialog button,
+.horizontal_togglebuttons,
+.numpad_key,
+.keyboard_pad {
+    background-color: @buttons-bg;
+}
+
+button:active,
+.horizontal_togglebuttons_active,
+button.active {
+    background-color: @active-dark;
+}
+
+.message_popup_echo,
+.message_popup_echo button {
+    background-color: @echo;
+}
+
+.message_popup_warning,
+.message_popup_warning button,
+.warning {
+    background-color: @warning;
+}
+
+.message_popup_error,
+.message_popup_error button,
+.error,
+.message {
+    background-color: @error;
+}
+
+.printing-status,
+.printing-progress-text,
+.printing-status-label {
+    color: @text;
+}
