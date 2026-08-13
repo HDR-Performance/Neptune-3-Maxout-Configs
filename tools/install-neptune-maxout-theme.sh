@@ -10,6 +10,7 @@ KS_CONFIG="${CONFIG_DIR}/KlipperScreen.conf"
 THEME_NAME="neptune-maxout"
 THEME_DIR="${KS_DIR}/styles/${THEME_NAME}"
 SOURCE_ICON_DIR="${KS_DIR}/styles/material-dark/images"
+ROTATION_STATE="${HDR_PAD7_ROTATION_STATE:-/etc/hdr-pad7-rotation.state}"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 RESTORE_MATERIAL_DARK=0
 TEMP_DIR=""
@@ -102,6 +103,20 @@ set_theme() {
   rm -f -- "${clean_file}" "${output_file}"
 }
 
+apply_orientation_background() {
+  local angle="0" source_image
+  if [[ -r "${ROTATION_STATE}" ]]; then
+    angle="$(tr -d '[:space:]' <"${ROTATION_STATE}")"
+  fi
+  case "${angle}" in
+    90|270) source_image="${THEME_DIR}/background-portrait.png" ;;
+    *) source_image="${THEME_DIR}/background-landscape.png" ;;
+  esac
+  [[ -s "${source_image}" ]] || die "Orientation background is missing: ${source_image}"
+  install -m 0644 "${source_image}" "${THEME_DIR}/background.png"
+  printf 'Active wallpaper: %s (rotation %s degrees)\n' "$(basename "${source_image}")" "${angle}"
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --restore-material-dark) RESTORE_MATERIAL_DARK=1; shift ;;
@@ -132,8 +147,10 @@ mkdir -p "${TEMP_DIR}/images"
 for relative_path in \
   style.css \
   style.conf \
-  background.png \
+  background-landscape.png \
+  background-portrait.png \
   preview.png \
+  preview-portrait.png \
   images/printer.png \
   images/neptune-maxout.png; do
   mkdir -p "$(dirname "${TEMP_DIR}/${relative_path}")"
@@ -141,7 +158,8 @@ for relative_path in \
 done
 
 [[ -s "${TEMP_DIR}/style.css" ]] || die "Theme stylesheet download is empty."
-[[ -s "${TEMP_DIR}/background.png" ]] || die "Theme background download is empty."
+[[ -s "${TEMP_DIR}/background-landscape.png" ]] || die "Landscape background download is empty."
+[[ -s "${TEMP_DIR}/background-portrait.png" ]] || die "Portrait background download is empty."
 
 if [[ -d "${THEME_DIR}" ]]; then
   cp -a "${THEME_DIR}" "${THEME_DIR}.hdr-backup-${STAMP}"
@@ -152,6 +170,7 @@ rm -rf -- "${THEME_DIR}"
 mkdir -p "${THEME_DIR}/images"
 cp -a "${SOURCE_ICON_DIR}/." "${THEME_DIR}/images/"
 cp -a "${TEMP_DIR}/." "${THEME_DIR}/"
+apply_orientation_background
 set_theme "${THEME_NAME}"
 
 sudo systemctl restart KlipperScreen.service

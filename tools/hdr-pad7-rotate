@@ -23,6 +23,33 @@ LANDSCAPE_TOUCH_OFFSET="${HDR_PAD7_LANDSCAPE_TOUCH_OFFSET:-0}"
 PORTRAIT_TOUCH_OFFSET="${HDR_PAD7_PORTRAIT_TOUCH_OFFSET:-180}"
 ANGLE="${1:-0}"
 
+find_theme_dir() {
+  local service_user service_home
+  if [[ -n "${HDR_PAD7_THEME_DIR:-}" ]]; then
+    printf '%s\n' "${HDR_PAD7_THEME_DIR}"
+    return
+  fi
+  service_user="$(systemctl show KlipperScreen.service --property=User --value 2>/dev/null || true)"
+  [[ -n "${service_user}" ]] || service_user="$(ps -eo user=,comm= | awk '$2 == "KlipperScreen" {print $1; exit}')"
+  [[ -n "${service_user}" ]] || service_user="biqu"
+  service_home="$(getent passwd "${service_user}" | cut -d: -f6)"
+  [[ -n "${service_home}" ]] || service_home="/home/${service_user}"
+  printf '%s\n' "${service_home}/KlipperScreen/styles/neptune-maxout"
+}
+
+apply_theme_background() {
+  local theme_dir source_image
+  theme_dir="$(find_theme_dir)"
+  case "${ANGLE}" in
+    0|180) source_image="${theme_dir}/background-landscape.png" ;;
+    90|270) source_image="${theme_dir}/background-portrait.png" ;;
+  esac
+  if [[ -f "${source_image}" && -d "${theme_dir}" ]]; then
+    install -m 0644 "${source_image}" "${theme_dir}/background.png"
+    printf 'Neptune Maxout background switched to %s.\n' "$(basename "${source_image}")"
+  fi
+}
+
 case "${ANGLE}" in
   0)
     XORG_ROTATION="normal"
@@ -120,6 +147,7 @@ install -m 0644 "${TOUCH_TMP}" "${TOUCH_FILE}"
 rm -f -- "${LEGACY_TOUCH_FILE}"
 printf '%s\n' "${ANGLE}" >"${STATE_FILE}"
 chmod 0644 "${STATE_FILE}"
+apply_theme_background
 
 printf 'Pad 7 display set to %s degrees; touchscreen matrix set to %s degrees (layout offset %s).\n' \
   "${ANGLE}" "${TOUCH_ANGLE}" "${ACTIVE_TOUCH_OFFSET}"
