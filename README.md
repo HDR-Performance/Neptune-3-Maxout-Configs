@@ -24,6 +24,7 @@ The legacy tutorials have been rebuilt as a structured, corrected documentation 
 - **[Set up a Pad 7 CM4, motor controls, and screen rotation](docs/14-pad7-cm4-klipperscreen.md)**
 - **[Set up tested Pad 7 CB1/CM4 display and touchscreen controls](docs/15-pad7-display-touch-controls.md)**
 - **[Install the Neptune Maxout KlipperScreen theme](docs/16-neptune-maxout-klipperscreen-theme.md)**
+- **[Enable Pad 7 CM4/CB1 speaker audio and Maxout laser feedback](docs/17-pad7-sound.md)**
 - [Choose the correct printer/controller package](docs/01-choose-the-correct-package.md)
 - [Install a package safely](docs/02-install-a-package.md)
 - [Build Robin Nano firmware](docs/03-robin-nano-firmware.md)
@@ -80,6 +81,7 @@ Every ZIP contains `START_HERE.md`, a model-specific installation sequence, wiri
 
 - KAMP adaptive meshing, smart parking, and a bounded 100 mm/s purge-position move
 - BTT Pad 7 ADXL345 input-shaper calibration
+- Known-good upgraded Neptune 3 Max baseline: EI at X 50.0 Hz and Y 40.2 Hz
 - Friendly manual Z-offset calibration with nozzle pre-cleaning
 - Filament load, unload, color change, and runout recovery
 - Ten-minute unattended runout hotend cooldown
@@ -89,7 +91,7 @@ Every ZIP contains `START_HERE.md`, a model-specific installation sequence, wiri
 - Model-specific homing, mesh, motion envelope, and screw locations
 - Organized `custom/kamp`, `custom/macros`, and `custom/state` directories
 - Automatic Pad 7 CB1/CM4 screen rotation with the tested matching touchscreen matrix
-- Neptune Maxout Pad 7 theme with branded background, red/charcoal controls, and a printer badge
+- Neptune Maxout Pad 7 theme with branded background, red/charcoal controls, a printer badge, and original retro laser button feedback on CM4 or CB1
 
 ## Corrected SKR 3 EZ details
 
