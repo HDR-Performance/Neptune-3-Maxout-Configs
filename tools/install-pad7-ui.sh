@@ -70,7 +70,6 @@ SERVICE_TMP="$(mktemp)"
 cat >"${SERVICE_TMP}" <<'EOF'
 [Unit]
 Description=HDR Performance Pad 7 rotation control
-After=KlipperScreen.service moonraker.service
 
 [Service]
 Type=oneshot
