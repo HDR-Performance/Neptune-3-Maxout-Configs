@@ -8,6 +8,7 @@ CONFIG_DIR="${HDR_CONFIG_DIR:-${HOME}/printer_data/config}"
 BACKUP_ROOT="${HDR_BACKUP_ROOT:-${HOME}/printer_data/config_backups}"
 PACKAGE_ID=""
 MCU_ID=""
+HOST_TYPE="auto"
 ASSUME_YES=0
 DRY_RUN=0
 TEMP_DIR=""
@@ -41,6 +42,7 @@ Usage:
 Options:
   --package ID       Skip the menu and select a package ID.
   --mcu-id PATH      SKR only: replace the MCU placeholder with this exact path.
+  --host TYPE        Pad host: auto (default), cb1, or cm4.
   --config-dir PATH  Override ~/printer_data/config.
   --dry-run          Download and inspect, but do not change the printer.
   --yes              Skip the final INSTALL confirmation. Does not guess an MCU ID.
@@ -137,6 +139,44 @@ resolve_package() {
   esac
 }
 
+resolve_host_type() {
+  local model=""
+  case "${HOST_TYPE}" in
+    auto)
+      if [[ -r /proc/device-tree/model ]]; then
+        model="$(tr -d '\0' </proc/device-tree/model)"
+      fi
+      case "${model}" in
+        *"Compute Module 4"*) HOST_TYPE="cm4" ;;
+        *"BTT-CB1"*|*"BIGTREETECH CB1"*) HOST_TYPE="cb1" ;;
+        *) HOST_TYPE="unchanged" ;;
+      esac
+      ;;
+    cb1|cm4) ;;
+    *) die "--host must be auto, cb1, or cm4." ;;
+  esac
+}
+
+adapt_host_config() {
+  local printer_cfg="$1"
+  if [[ "${HOST_TYPE}" == "cm4" ]]; then
+    if grep -q '^\[mcu CB1\]' "${printer_cfg}"; then
+      sed -i \
+        -e 's/^\[mcu CB1\].*$/[mcu CM4]  # BIGTREETECH Pad 7 with Raspberry Pi CM4 host MCU/' \
+        -e 's/CB1:None/CM4:None/' \
+        -e 's/spidev1\.1/spidev0.1/' \
+        "${printer_cfg}"
+    fi
+    grep -q '^\[mcu CM4\]' "${printer_cfg}" || die "CM4 adaptation could not find the host MCU block."
+    grep -q 'cs_pin: CM4:None' "${printer_cfg}" || die "CM4 adaptation could not set the ADXL chip select."
+    grep -q 'spi_bus: spidev0.1' "${printer_cfg}" || die "CM4 adaptation could not set the ADXL SPI bus."
+    info "Adapted Pad 7 input shaping for Raspberry Pi CM4"
+  elif [[ "${HOST_TYPE}" == "unchanged" ]]; then
+    printf 'WARNING: Pad host was not recognized; host-MCU/ADXL settings were left unchanged.\n' >&2
+    printf 'Use --host cb1 or --host cm4 when the host type is known.\n' >&2
+  fi
+}
+
 download_file() {
   local url="$1"
   local destination="$2"
@@ -207,6 +247,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --package) [[ $# -ge 2 ]] || die "--package requires a value."; PACKAGE_ID="$2"; shift 2 ;;
     --mcu-id) [[ $# -ge 2 ]] || die "--mcu-id requires a value."; MCU_ID="$2"; shift 2 ;;
+    --host) [[ $# -ge 2 ]] || die "--host requires a value."; HOST_TYPE="$2"; shift 2 ;;
     --config-dir) [[ $# -ge 2 ]] || die "--config-dir requires a value."; CONFIG_DIR="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
     --yes) ASSUME_YES=1; shift ;;
@@ -220,11 +261,13 @@ command -v unzip >/dev/null 2>&1 || die "unzip is required. Install it before co
 validate_config_dir
 [[ -n "${PACKAGE_ID}" ]] || select_package
 resolve_package
+resolve_host_type
 
 printf '\nHDR Performance Neptune 3 installer\n'
 printf 'Package:    %s\n' "${PACKAGE_LABEL}"
 printf 'Config dir: %s\n' "${CONFIG_DIR}"
 printf 'Source:     %s/%s\n' "${RAW_BASE}" "${ZIP_NAME}"
+printf 'Pad host:   %s\n' "${HOST_TYPE}"
 if [[ ${FRESH_INSTALL} -eq 1 ]]; then
   printf 'Mode:       fresh install (no existing printer.cfg)\n'
 fi
@@ -270,6 +313,7 @@ SOURCE_CONFIG="${PACKAGE_ROOT}/config"
 [[ -f "${SOURCE_CONFIG}/printer.cfg" ]] || die "Package does not contain config/printer.cfg."
 [[ -f "${SOURCE_CONFIG}/KAMP_Settings.cfg" ]] || die "Package does not contain config/KAMP_Settings.cfg."
 [[ -d "${SOURCE_CONFIG}/custom" ]] || die "Package does not contain the custom configuration directories."
+adapt_host_config "${SOURCE_CONFIG}/printer.cfg"
 
 if [[ ${DRY_RUN} -eq 1 ]]; then
   info "Dry run successful; no printer files were changed"
@@ -316,6 +360,7 @@ package_label=${PACKAGE_LABEL}
 installed_at=${timestamp}
 backup_dir=${BACKUP_DIR}
 source=${RAW_BASE}/${ZIP_NAME}
+pad_host=${HOST_TYPE}
 EOF
 
 info "Installation files copied successfully"
