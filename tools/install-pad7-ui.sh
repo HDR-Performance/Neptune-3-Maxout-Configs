@@ -95,17 +95,27 @@ if [[ -f "${ASVC_FILE}" ]]; then
   cp -a "${ASVC_FILE}" "${ASVC_FILE}.hdr-backup-${STAMP}"
 fi
 
+MENU_CLEAN="$(mktemp)"
+MENU_BLOCK="$(mktemp)"
 MENU_TMP="$(mktemp)"
 if [[ -f "${KLIPPERSCREEN_CONFIG}" ]]; then
   awk '
     /^# HDR Performance Pad 7 rotation begin$/ {skip=1; next}
     /^# HDR Performance Pad 7 rotation end$/ {skip=0; next}
+    /^# HDR Performance Pad 7 controls begin$/ {skip=1; next}
+    /^# HDR Performance Pad 7 controls end$/ {skip=0; next}
     !skip {print}
-  ' "${KLIPPERSCREEN_CONFIG}" >"${MENU_TMP}"
+  ' "${KLIPPERSCREEN_CONFIG}" >"${MENU_CLEAN}"
 fi
-cat >>"${MENU_TMP}" <<'EOF'
+cat >"${MENU_BLOCK}" <<'EOF'
 
-# HDR Performance Pad 7 rotation begin
+# HDR Performance Pad 7 controls begin
+[menu __main hdr_macros]
+name: Macros
+icon: custom-script
+panel: gcode_macros
+enable: {{ printer.gcode_macros.count > 0 }}
+
 [menu __main more hdr_rotation]
 name: Screen Rotation
 icon: settings
@@ -115,10 +125,25 @@ name: Rotate Screen 90 Degrees
 icon: refresh
 method: machine.services.restart
 params: {"service":"hdr-pad7-rotate"}
-# HDR Performance Pad 7 rotation end
+# HDR Performance Pad 7 controls end
 EOF
+
+# KlipperScreen owns everything below its auto-generated marker. Insert custom
+# menu sections before that marker so a settings save cannot erase them.
+if grep -q '^#~# --- Do not edit below this line' "${MENU_CLEAN}"; then
+  awk -v block="${MENU_BLOCK}" '
+    !inserted && /^#~# --- Do not edit below this line/ {
+      while ((getline line < block) > 0) print line
+      close(block)
+      inserted=1
+    }
+    {print}
+  ' "${MENU_CLEAN}" >"${MENU_TMP}"
+else
+  cat "${MENU_CLEAN}" "${MENU_BLOCK}" >"${MENU_TMP}"
+fi
 install -m 0644 "${MENU_TMP}" "${KLIPPERSCREEN_CONFIG}"
-rm -f -- "${MENU_TMP}"
+rm -f -- "${MENU_CLEAN}" "${MENU_BLOCK}" "${MENU_TMP}"
 
 touch "${ASVC_FILE}"
 grep -qxF 'hdr-pad7-rotate' "${ASVC_FILE}" || printf '%s\n' 'hdr-pad7-rotate' >>"${ASVC_FILE}"
@@ -138,5 +163,6 @@ sudo systemctl restart moonraker.service
 printf '\nHDR Performance Pad 7 controls installed.\n'
 printf 'Display: %s\nTouchscreen: %s\n' "${DISPLAY_CONNECTOR}" "${TOUCH_NAME}"
 printf 'KlipperScreen: More > Screen Rotation > Rotate Screen 90 Degrees\n'
+printf 'KlipperScreen: Main Menu > Macros\n'
 printf 'Motor release: Move > Disable Motors (the motor-off icon beside Home).\n'
 printf 'After releasing motors, home again before any controlled move.\n'
