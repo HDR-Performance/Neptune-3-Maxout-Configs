@@ -251,7 +251,7 @@ pad7_ui_detected() {
   command -v xinput >/dev/null 2>&1 || return 1
   systemctl cat KlipperScreen.service >/dev/null 2>&1 || return 1
   DISPLAY=:0 xrandr --query 2>/dev/null | grep -q '1024x600' || return 1
-  DISPLAY=:0 xinput list --name-only 2>/dev/null | grep -Eiq 'BTT-HDMI7' || return 1
+  DISPLAY=:0 xinput list --name-only 2>/dev/null | grep -Eiq 'BTT-HDMI7|ILITEK-TP' || return 1
 }
 
 install_pad7_ui() {
@@ -278,7 +278,13 @@ install_pad7_ui() {
   download_file "${RAW_BASE}/tools/install-pad7-ui.sh" "${ui_installer}"
   download_file "${RAW_BASE}/tools/hdr-pad7-rotate" "${ui_dir}/hdr-pad7-rotate"
   chmod +x "${ui_installer}" "${ui_dir}/hdr-pad7-rotate"
-  HDR_CONFIG_DIR="${CONFIG_DIR}" HDR_RAW_BASE="${RAW_BASE}" "${ui_installer}"
+  if ! HDR_CONFIG_DIR="${CONFIG_DIR}" HDR_RAW_BASE="${RAW_BASE}" "${ui_installer}"; then
+    if [[ "${PAD7_UI_MODE}" == "on" ]]; then
+      die "Required Pad 7 UI installation failed. Printer files remain backed up at ${BACKUP_DIR}."
+    fi
+    printf 'WARNING: Pad 7 hardware was detected, but its optional UI controls could not be installed.\n' >&2
+    printf 'The printer package is installed. Follow docs/15-pad7-display-touch-controls.md to repair the UI.\n' >&2
+  fi
 }
 
 while [[ $# -gt 0 ]]; do
@@ -409,6 +415,7 @@ installed_at=${timestamp}
 backup_dir=${BACKUP_DIR}
 source=${RAW_BASE}/${ZIP_NAME}
 pad_host=${HOST_TYPE}
+pad7_ui=${PAD7_UI_MODE}
 EOF
 
 info "Installation files copied successfully"
