@@ -65,6 +65,10 @@ if [[ -f /etc/udev/rules.d/51-hdr-pad7-touchscreen.rules ]]; then
   sudo cp -a /etc/udev/rules.d/51-hdr-pad7-touchscreen.rules \
     "/etc/udev/rules.d/51-hdr-pad7-touchscreen.rules.hdr-backup-${STAMP}"
 fi
+if [[ -f /etc/X11/xorg.conf.d/91-hdr-pad7-touchscreen.conf ]]; then
+  sudo cp -a /etc/X11/xorg.conf.d/91-hdr-pad7-touchscreen.conf \
+    "/etc/X11/xorg.conf.d/91-hdr-pad7-touchscreen.conf.hdr-backup-${STAMP}"
+fi
 
 SERVICE_TMP="$(mktemp)"
 cat >"${SERVICE_TMP}" <<'EOF'
