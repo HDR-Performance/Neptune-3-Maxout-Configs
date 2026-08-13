@@ -14,6 +14,12 @@ Records maintenance totals, lifts within the configured Z limit, presents the pa
 
 The package provides bounded park moves and state cleanup. Use the package's `PAUSE`, `RESUME`, and `CANCEL_PRINT` buttons rather than adding another competing macro set.
 
+### Home and release motors
+
+KlipperScreen's **Move** panel places **Disable Motors** beside **Home**. Homing intentionally leaves the steppers energized so the machine retains its position. Use the protected Disable Motors button when you are finished, then home again before another controlled move. Do not append `M18`/`M84` to the homing macro automatically.
+
+Pad 7 CM4 owners can also install the paired [screen and touchscreen rotation controls](14-pad7-cm4-klipperscreen.md).
+
 ## Manual Z-offset calibration
 
 Run:
