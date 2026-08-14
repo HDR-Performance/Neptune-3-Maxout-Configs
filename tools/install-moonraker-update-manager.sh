@@ -25,8 +25,12 @@ if [[ -d "${REPO_DIR}/.git" ]]; then
   [[ "${current_origin}" == "${ORIGIN}" || "${current_origin}" == "${ORIGIN%.git}" ]] || die "Existing repository origin is not ${ORIGIN}."
   git -C "${REPO_DIR}" config core.fileMode false
   [[ -z "$(git -C "${REPO_DIR}" status --porcelain)" ]] || die "Existing HDR repository has local changes; Moonraker requires a pristine repository."
-  git -C "${REPO_DIR}" fetch --prune origin
-  git -C "${REPO_DIR}" switch "${BRANCH}"
+  git -C "${REPO_DIR}" fetch --prune origin "+refs/heads/${BRANCH}:refs/remotes/origin/${BRANCH}"
+  if git -C "${REPO_DIR}" show-ref --verify --quiet "refs/heads/${BRANCH}"; then
+    git -C "${REPO_DIR}" switch "${BRANCH}"
+  else
+    git -C "${REPO_DIR}" switch --track -c "${BRANCH}" "origin/${BRANCH}"
+  fi
   git -C "${REPO_DIR}" pull --ff-only origin "${BRANCH}"
 else
   git clone --branch "${BRANCH}" --single-branch "${ORIGIN}" "${REPO_DIR}"
