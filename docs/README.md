@@ -11,6 +11,7 @@ This documentation consolidates the useful material from the two original HDR Pe
 3. Read the firmware guide for your controller:
    - [Robin Nano firmware](03-robin-nano-firmware.md)
    - [SKR 3 EZ firmware and controller conversion](04-skr3ez-conversion.md)
+   - [Pad 7 CM4/SKR USB recovery and package-specific OTA updates](19-skr-cm4-usb-and-ota-updates.md)
 4. [Commission the printer safely](05-commissioning-checklist.md)
 5. [Configure KAMP](06-kamp-setup.md)
 6. [Calibrate input shaper with the Pad 7](07-input-shaper.md)

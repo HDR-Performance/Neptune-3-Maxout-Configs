@@ -11,6 +11,8 @@ MCU_ID=""
 HOST_TYPE="auto"
 PAD7_UI_MODE="${HDR_PAD7_UI:-auto}"
 PAD7_THEME_MODE="${HDR_PAD7_THEME:-auto}"
+SKR_USB_MODE="${HDR_SKR_USB_RECOVERY:-auto}"
+MOONRAKER_KAMP_MODE="${HDR_MOONRAKER_KAMP:-auto}"
 ASSUME_YES=0
 DRY_RUN=0
 TEMP_DIR=""
@@ -47,6 +49,8 @@ Options:
   --host TYPE        Klipper host: auto (default), cb1, cm4, or pi4.
   --pad7-ui MODE     Pad 7 controls: auto (default), on, or off.
   --pad7-theme MODE  Neptune Maxout theme: auto (default), on, or off.
+  --skr-usb MODE      SKR USB recovery: auto (CM4 default), on, or off.
+  --moonraker-kamp MODE  KAMP Moonraker preflight: auto (default), on, or off.
   --config-dir PATH  Override ~/printer_data/config.
   --dry-run          Download and inspect, but do not change the printer.
   --yes              Skip the final INSTALL confirmation. Does not guess an MCU ID.
@@ -342,6 +346,65 @@ install_pad7_theme() {
   fi
 }
 
+install_skr_usb_recovery() {
+  local usb_installer="${TEMP_DIR}/install-skr-usb-recovery.sh"
+  [[ "${CONTROLLER}" == "skr" ]] || return 0
+
+  case "${SKR_USB_MODE}" in
+    off)
+      info "SKR USB recovery disabled"
+      return 0
+      ;;
+    auto)
+      if [[ "${HOST_TYPE}" != "cm4" ]]; then
+        info "SKR USB recovery is not needed automatically on host type ${HOST_TYPE}"
+        return 0
+      fi
+      ;;
+    on) ;;
+    *) die "--skr-usb must be auto, on, or off." ;;
+  esac
+
+  if [[ -z "${MCU_ID}" || "${MCU_ID}" != /dev/serial/by-id/* ]]; then
+    printf 'WARNING: CM4 SKR USB recovery was not installed because no stable --mcu-id was selected.\n' >&2
+    printf 'Re-run with the exact /dev/serial/by-id/... path after the SKR is connected.\n' >&2
+    return 0
+  fi
+
+  info "Installing the Pad 7 CM4/SKR USB boot-wait and reconnect recovery"
+  download_file "${RAW_BASE}/tools/install-skr-usb-recovery.sh" "${usb_installer}"
+  chmod +x "${usb_installer}"
+  if ! "${usb_installer}" "${MCU_ID}"; then
+    if [[ "${SKR_USB_MODE}" == "on" ]]; then
+      die "Required SKR USB recovery installation failed."
+    fi
+    printf 'WARNING: Printer files were installed, but optional CM4/SKR USB recovery failed.\n' >&2
+  fi
+}
+
+configure_moonraker_kamp() {
+  local preflight="${TEMP_DIR}/configure-moonraker-kamp.sh"
+  case "${MOONRAKER_KAMP_MODE}" in
+    off) info "Moonraker KAMP preflight disabled"; return 0 ;;
+    auto)
+      if [[ ! -f "${CONFIG_DIR}/moonraker.conf" ]]; then
+        info "moonraker.conf was not found in the config directory; KAMP preflight was skipped"
+        return 0
+      fi
+      ;;
+    on) [[ -f "${CONFIG_DIR}/moonraker.conf" ]] || die "Required moonraker.conf is missing from ${CONFIG_DIR}." ;;
+    *) die "--moonraker-kamp must be auto, on, or off." ;;
+  esac
+
+  info "Backing up and configuring Moonraker object processing for KAMP"
+  download_file "${RAW_BASE}/tools/configure-moonraker-kamp.sh" "${preflight}"
+  chmod +x "${preflight}"
+  if ! HDR_CONFIG_DIR="${CONFIG_DIR}" "${preflight}"; then
+    [[ "${MOONRAKER_KAMP_MODE}" != on ]] || die "Required Moonraker KAMP preflight failed."
+    printf 'WARNING: Printer files were installed, but Moonraker KAMP preflight failed or rolled back.\n' >&2
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --package) [[ $# -ge 2 ]] || die "--package requires a value."; PACKAGE_ID="$2"; shift 2 ;;
@@ -349,6 +412,8 @@ while [[ $# -gt 0 ]]; do
     --host) [[ $# -ge 2 ]] || die "--host requires a value."; HOST_TYPE="$2"; shift 2 ;;
     --pad7-ui) [[ $# -ge 2 ]] || die "--pad7-ui requires a value."; PAD7_UI_MODE="$2"; shift 2 ;;
     --pad7-theme) [[ $# -ge 2 ]] || die "--pad7-theme requires a value."; PAD7_THEME_MODE="$2"; shift 2 ;;
+    --skr-usb) [[ $# -ge 2 ]] || die "--skr-usb requires a value."; SKR_USB_MODE="$2"; shift 2 ;;
+    --moonraker-kamp) [[ $# -ge 2 ]] || die "--moonraker-kamp requires a value."; MOONRAKER_KAMP_MODE="$2"; shift 2 ;;
     --config-dir) [[ $# -ge 2 ]] || die "--config-dir requires a value."; CONFIG_DIR="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
     --yes) ASSUME_YES=1; shift ;;
@@ -365,6 +430,8 @@ resolve_package
 resolve_host_type
 case "${PAD7_UI_MODE}" in auto|on|off) ;; *) die "--pad7-ui must be auto, on, or off." ;; esac
 case "${PAD7_THEME_MODE}" in auto|on|off) ;; *) die "--pad7-theme must be auto, on, or off." ;; esac
+case "${SKR_USB_MODE}" in auto|on|off) ;; *) die "--skr-usb must be auto, on, or off." ;; esac
+case "${MOONRAKER_KAMP_MODE}" in auto|on|off) ;; *) die "--moonraker-kamp must be auto, on, or off." ;; esac
 
 printf '\nHDR Performance Neptune 3 installer\n'
 printf 'Package:    %s\n' "${PACKAGE_LABEL}"
@@ -373,6 +440,8 @@ printf 'Source:     %s/%s\n' "${RAW_BASE}" "${ZIP_NAME}"
 printf 'Host:       %s\n' "${HOST_TYPE}"
 printf 'Pad 7 UI:   %s\n' "${PAD7_UI_MODE}"
 printf 'Pad 7 theme:%s\n' " ${PAD7_THEME_MODE}"
+printf 'SKR USB:    %s\n' "${SKR_USB_MODE}"
+printf 'KAMP/Moonraker: %s\n' "${MOONRAKER_KAMP_MODE}"
 if [[ ${FRESH_INSTALL} -eq 1 ]]; then
   printf 'Mode:       fresh install (no existing printer.cfg)\n'
 fi
@@ -437,6 +506,11 @@ if [[ ${DRY_RUN} -eq 1 ]]; then
   else
     printf 'Pad 7 theme: not detected in this session\n'
   fi
+  if [[ "${CONTROLLER}" == "skr" && "${SKR_USB_MODE}" == "auto" && "${HOST_TYPE}" == "cm4" ]]; then
+    printf 'SKR USB recovery: Pad 7 CM4 detected; recovery would be installed after a stable MCU ID is selected\n'
+  else
+    printf 'SKR USB recovery: %s\n' "${SKR_USB_MODE}"
+  fi
   exit 0
 fi
 
@@ -495,6 +569,17 @@ fi
 
 install_pad7_ui
 install_pad7_theme
+install_skr_usb_recovery
+configure_moonraker_kamp
+
+UPDATE_SCRIPT="${HOME}/hdr-neptune-update.sh"
+if download_file "${RAW_BASE}/update.sh" "${UPDATE_SCRIPT}"; then
+  chmod +x "${UPDATE_SCRIPT}"
+  printf 'OTA updater: %s --package %s\n' "${UPDATE_SCRIPT}" "${PACKAGE_ID}"
+else
+  printf 'WARNING: Could not download the optional OTA updater.\n' >&2
+  rm -f -- "${UPDATE_SCRIPT}"
+fi
 
 printf 'Backup: %s\n' "${BACKUP_DIR}"
 printf 'Docs:   %s\n' "${DOC_DIR}"
