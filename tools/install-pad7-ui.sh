@@ -140,11 +140,15 @@ icon: custom-script
 panel: gcode_macros
 enable: {{ printer.gcode_macros.count > 0 }}
 
-# Override KlipperScreen's stock More > Z Calibrate entry. The stock panel
-# starts PROBE_CALIBRATE directly and bypasses the Maxout nozzle-cleaning
-# sequence. KlipperScreen automatically opens its TESTZ panel when this macro
-# reaches manual-probe mode.
+# Hide KlipperScreen's stock More > Z Calibrate entry. Reusing this exact menu
+# path would inherit its `panel: zcalibrate` setting, which takes precedence
+# over a gcode method and bypasses the Maxout cleaning sequence.
 [menu __main more zoffset]
+enable: False
+
+# Use a unique menu path so this button sends the cleaning macro. KlipperScreen
+# automatically opens its TESTZ panel when the macro reaches manual-probe mode.
+[menu __main more hdr_zoffset_clean]
 name: Z Calibrate + Clean
 icon: z-farther
 method: printer.gcode.script
