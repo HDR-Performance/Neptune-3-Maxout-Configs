@@ -23,13 +23,17 @@ fi
 if [[ -d "${REPO_DIR}/.git" ]]; then
   current_origin="$(git -C "${REPO_DIR}" remote get-url origin 2>/dev/null || true)"
   [[ "${current_origin}" == "${ORIGIN}" || "${current_origin}" == "${ORIGIN%.git}" ]] || die "Existing repository origin is not ${ORIGIN}."
+  git -C "${REPO_DIR}" config core.fileMode false
   [[ -z "$(git -C "${REPO_DIR}" status --porcelain)" ]] || die "Existing HDR repository has local changes; Moonraker requires a pristine repository."
   git -C "${REPO_DIR}" fetch --prune origin
   git -C "${REPO_DIR}" switch "${BRANCH}"
   git -C "${REPO_DIR}" pull --ff-only origin "${BRANCH}"
 else
   git clone --branch "${BRANCH}" --single-branch "${ORIGIN}" "${REPO_DIR}"
+  git -C "${REPO_DIR}" config core.fileMode false
 fi
+
+chmod +x "${REPO_DIR}/update.sh" "${REPO_DIR}/tools/moonraker-update-hook.sh"
 
 MOONRAKER_BACKUP="${MOONRAKER_CONF}.hdr-update-manager-backup-${STAMP}"
 cp -a "${MOONRAKER_CONF}" "${MOONRAKER_BACKUP}"
