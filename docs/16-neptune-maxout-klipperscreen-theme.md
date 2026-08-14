@@ -58,6 +58,11 @@ The installer:
 
 If the installer reports that CM4 HDMI audio was changed, reboot the Pad once. See the dedicated [Pad 7 sound guide](17-pad7-sound.md) for direct testing, CB1 behavior, and recovery.
 
+On CM4, the button-sound hook intentionally causes Mainsail to mark
+KlipperScreen **DIRTY** with only `ks_includes/KlippyGtk.py` listed. That exact
+single-file warning may be ignored; investigate any other modified file. A
+KlipperScreen recovery removes the hook, so rerun this installer afterward.
+
 ## Change or restore the theme
 
 Choose another installed theme through KlipperScreen's appearance settings, or restore Material Dark over SSH:
@@ -79,3 +84,4 @@ The Neptune Maxout files are retained so the theme can be selected again without
 Theme and package integration by **HDR Performance**.
 
 Return to the [documentation index](README.md).
+
