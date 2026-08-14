@@ -34,6 +34,29 @@ Use `--skr-usb off` when installing the main package to leave system services an
 udev rules unchanged. Use `--skr-usb on` to require the recovery on a non-CM4
 host when diagnosing the same proven reconnect behavior.
 
+## Mainsail/Moonraker Update Manager
+
+New installations register a standard entry named `Neptune-Maxout-Configs` in
+Moonraker's Update Manager. Its clean Git checkout is stored at:
+
+```text
+~/Neptune-3-Maxout-Configs
+```
+
+The checkout is intentionally outside `~/printer_data/config`, preventing the
+overlapping inotify-watch warning. When the user presses **Update**, Moonraker
+pulls the repository and then invokes `tools/moonraker-update-hook.sh`. The hook
+runs the same package-aware `update.sh --yes` workflow described below, using
+the package identity recorded during installation.
+
+Moonraker currently supports `install_script` for `git_repo` extensions but
+marks it deprecated. The hook is isolated in one file so it can be replaced if
+Moonraker removes that compatibility option in a future release. Use
+`--moonraker-updater off` to skip this registration.
+
+The registrar supports `HDR_BRANCH` for maintainer testing. Normal users should
+leave it unset so the checkout and Update Manager remain pinned to `main`.
+
 ## Package-specific over-the-air updates
 
 The main installer leaves this helper in the user's home directory:
@@ -71,6 +94,8 @@ On a detected Pad 7, it also refreshes by default:
 - The matching touchscreen/digitizer transformations
 - The Neptune Maxout landscape and portrait theme assets
 - The platform-correct CB1 or CM4 sound integration and laser button feedback
+- Moonraker object processing and the known overlapping KAMP updater repair
+- The CM4/SKR USB boot-wait and reconnect recovery on that exact host/controller combination
 
 The hardware check prevents a normal Raspberry Pi 4 without the Pad 7 display
 from receiving Pad-specific display changes. To preserve a custom UI or theme:
@@ -95,3 +120,4 @@ Advanced users may deliberately include the package's new `printer.cfg`:
 That option preserves an existing stable SKR `/dev/serial/by-id/...` line, but
 all Z offset, PID, rotation-distance, thermistor, current, and other machine
 specific values must still be reviewed before issuing `RESTART`.
+
