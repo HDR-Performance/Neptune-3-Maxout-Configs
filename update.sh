@@ -89,6 +89,10 @@ trap 'rm -rf -- "${temp_dir}"' EXIT
 download "${RAW_BASE}/${ZIP}" "${temp_dir}/package.zip"
 command -v unzip >/dev/null 2>&1 || die "unzip is required."
 unzip -q "${temp_dir}/package.zip" -d "${temp_dir}/package"
+# Packages are produced on Windows and may retain read-only directory modes.
+# Normalize only the temporary extraction tree so validation and cleanup work
+# under the unprivileged Moonraker watcher account.
+chmod -R u+rwX "${temp_dir}/package"
 source_config="$(find "${temp_dir}/package" -type d -name config -print -quit)"
 [[ -n "${source_config}" && -d "${source_config}/custom" && -f "${source_config}/KAMP_Settings.cfg" ]] || die "Downloaded package structure is invalid."
 
