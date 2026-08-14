@@ -64,6 +64,26 @@ If the direct test works but buttons do not make sound, verify that KlipperScree
 
 The helper only plays when `theme: neptune-maxout` is selected in `KlipperScreen.conf`. Changing to another KlipperScreen theme therefore makes the UI silent without deleting the sound files or source backup.
 
+## Expected CM4 KlipperScreen dirty warning
+
+On a Pad 7 CM4, Mainsail may label **KlipperScreen** as **DIRTY** and report:
+
+```text
+Repo is dirty. Detected the following modified files: ['ks_includes/KlippyGtk.py']
+```
+
+This warning is expected because the CM4 laser-button integration adds its
+small click-sound hook to KlipperScreen's central button factory. It is safe to
+ignore **only when `ks_includes/KlippyGtk.py` is the sole modified tracked
+file** and the change came from this installer. Do not dismiss additional or
+unrecognized modified files.
+
+KlipperScreen **Soft Recovery** or **Hard Recovery** restores the upstream file
+and removes the CM4 button-sound hook. After recovery or a KlipperScreen update,
+rerun the Neptune Maxout theme installer to restore the tested theme and sound.
+The CB1 uses its factory external ALSA click script and normally does not modify
+`KlippyGtk.py`.
+
 ## Recovery
 
 The installer creates these recoverable backups before editing:
@@ -75,3 +95,4 @@ The installer creates these recoverable backups before editing:
 Restore the newest `KlippyGtk.py` backup and restart KlipperScreen if a later upstream KlipperScreen update changes its button factory. Re-run this installer after KlipperScreen updates to restore the theme sound hook against the new source.
 
 Return to the [documentation index](README.md).
+

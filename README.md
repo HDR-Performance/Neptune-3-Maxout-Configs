@@ -26,6 +26,12 @@ The legacy tutorials have been rebuilt as a structured, corrected documentation 
 - **[Set up tested Pad 7 CB1/CM4 display and touchscreen controls](docs/15-pad7-display-touch-controls.md)**
 - **[Install the Neptune Maxout KlipperScreen theme](docs/16-neptune-maxout-klipperscreen-theme.md)**
 - **[Enable Pad 7 CM4/CB1 speaker audio and Maxout laser feedback](docs/17-pad7-sound.md)**
+
+> **CM4 KlipperScreen notice:** Maxout laser-button audio intentionally patches
+> `ks_includes/KlippyGtk.py`, so Mainsail reports KlipperScreen as **DIRTY**.
+> Ignore that warning only when it lists that one expected file. Recovery or an
+> upstream KlipperScreen update removes the hook; rerun the theme installer to
+> restore it. CB1 uses its factory external audio hook and normally stays clean.
 - **[Install only Pad 7 CB1/CM4 screen rotation over SSH](docs/19-pad7-rotation-only.md)**
 - [Choose the correct printer/controller package](docs/01-choose-the-correct-package.md)
 - [Install a package safely](docs/02-install-a-package.md)
@@ -160,3 +166,4 @@ These are community modification packages, not official Elegoo, BIGTREETECH, Kli
 ## License
 
 This repository is distributed under the [GNU General Public License v3.0](LICENSE). Third-party projects and bundled components retain their own authorship and license terms.
+
