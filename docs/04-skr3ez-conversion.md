@@ -75,7 +75,7 @@ Starting RMS currents in the packages are:
 | Z | 0.8 A RMS for both Z motors on one driver |
 | Extruder | 0.8 A RMS |
 
-The packages use `stealthchop_threshold: 0`, keeping the drivers in spreadCycle for the intended high-load motion. They do not set a separate hold current.
+The Neptune 3, Pro, and Plus engineering packages use `stealthchop_threshold: 0`, keeping their drivers in SpreadCycle for the intended high-load motion. The physically tested Neptune 3 Max package instead preserves the quieter StealthChop and run/hold-current settings proven on the HDR Maxout printer. These motor-specific settings are used with either a CB1 or CM4 host and must not be copied blindly to different motors.
 
 Monitor motors and drivers during commissioning. Current is not tuned by chasing the highest value; it is tuned for reliable motion with acceptable temperatures and margin.
 

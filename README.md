@@ -6,8 +6,8 @@ Klipper upgrade packages for the Elegoo Neptune 3, Neptune 3 Pro, Neptune 3 Plus
 
 This repository consolidates the working packages and guides previously spread across:
 
-- [Neptune Maxout — SKR 3 EZ with TMC5160 Pro drivers](https://github.com/HDR-Performance/Neptune-Maxout-SKR-3-EZ-with-TMC5160-Pro-Drivers)
-- [Neptune 3 Max — BIGTREETECH Pad 7](https://github.com/HDR-Performance/Neptune-3-Max-bigtreetech-pad-7-)
+- [Neptune Maxout â€” SKR 3 EZ with TMC5160 Pro drivers](https://github.com/HDR-Performance/Neptune-Maxout-SKR-3-EZ-with-TMC5160-Pro-Drivers)
+- [Neptune 3 Max â€” BIGTREETECH Pad 7](https://github.com/HDR-Performance/Neptune-3-Max-bigtreetech-pad-7-)
 
 The older wiring, firmware, KAMP, slicer, Moonraker, troubleshooting, and motor-upgrade information has been preserved where useful and corrected where board limits or current Klipper behavior required it.
 
@@ -26,6 +26,7 @@ The legacy tutorials have been rebuilt as a structured, corrected documentation 
 - **[Set up tested Pad 7 CB1/CM4 display and touchscreen controls](docs/15-pad7-display-touch-controls.md)**
 - **[Install the Neptune Maxout KlipperScreen theme](docs/16-neptune-maxout-klipperscreen-theme.md)**
 - **[Enable Pad 7 CM4/CB1 speaker audio and Maxout laser feedback](docs/17-pad7-sound.md)**
+- **[Install only Pad 7 CB1/CM4 screen rotation over SSH](docs/19-pad7-rotation-only.md)**
 - [Choose the correct printer/controller package](docs/01-choose-the-correct-package.md)
 - [Install a package safely](docs/02-install-a-package.md)
 - [Build Robin Nano firmware](docs/03-robin-nano-firmware.md)
@@ -52,6 +53,19 @@ chmod +x hdr-neptune-install.sh
 
 Choose the exact printer and controller from the interactive menu. See the [complete SSH installation and restore guide](docs/12-ssh-installer.md) before running it.
 
+### Rotation-only SSH installer
+
+Pad 7 CB1 and CM4 users who only want the tested screen/touch rotation controls can run:
+
+```text
+cd ~
+curl -fsSL https://raw.githubusercontent.com/HDR-Performance/Neptune-3-Maxout-Configs/main/tools/install-pad7-rotation.sh -o install-pad7-rotation.sh
+chmod +x install-pad7-rotation.sh
+./install-pad7-rotation.sh
+```
+
+This does not install or replace printer configuration, KAMP, macros, themes, or audio. See the [standalone rotation guide](docs/19-pad7-rotation-only.md).
+
 ## Choose the controller family
 
 ### Stock Robin Nano + BTT Pad 7
@@ -65,14 +79,14 @@ These packages retain each model's supplied working Robin Nano hardware mapping 
 | Neptune 3 Plus | [Robin Nano package](Neptune3Plus-HDR-Performance-Pad7-Complete-Guide.zip) |
 | Neptune 3 Max | [Robin Nano package](Neptune3Max-HDR-Performance-Pad7-Complete-Guide.zip) |
 
-### HDR Maxout — SKR 3 EZ + TMC5160 Pro EZ + BTT Pad 7
+### HDR Maxout â€” SKR 3 EZ + TMC5160 Pro EZ + BTT Pad 7
 
-These are full controller-conversion packages. The common baseline is four TMC5160 Pro EZ drivers, a 42×60 mm / 2.1 A Y motor, the original Y motor moved to X, both Z motors on one driver, and BTT Pad 7 input shaping.
+These are full controller-conversion packages. The common baseline is four TMC5160 Pro EZ drivers, a 42Ã—60 mm / 2.1 A Y motor, the original Y motor moved to X, both Z motors on one driver, and BTT Pad 7 input shaping.
 
 | Printer | Download | Status and important difference |
 |---|---|---|
 | Neptune 3 | [SKR Maxout package](Neptune3-SKR3EZ-TMC5160Pro-HDR-Performance.zip) | Engineering conversion; stock strain-gauge interface must be electrically verified at PC13 |
-| Neptune 3 Pro | [SKR Maxout package](Neptune3Pro-SKR3EZ-TMC5160Pro-HDR-Performance.zip) | Pro geometry, inductive probe through PC0, stock-hotend 250 °C limit |
+| Neptune 3 Pro | [SKR Maxout package](Neptune3Pro-SKR3EZ-TMC5160Pro-HDR-Performance.zip) | Pro geometry, inductive probe through PC0, stock-hotend 250 Â°C limit |
 | Neptune 3 Plus | [SKR Maxout package](Neptune3Plus-SKR3EZ-TMC5160Pro-HDR-Performance.zip) | Plus geometry; verify bed current and use an external MOSFET when required |
 | Neptune 3 Max | [SKR Maxout package](Neptune3Max-SKR3EZ-TMC5160Pro-HDR-Performance.zip) | Consolidated working Max build; 0.4 mm CHT/FlowTech baseline and Max geometry |
 
@@ -98,8 +112,8 @@ Every ZIP contains `START_HERE.md`, a model-specific installation sequence, wiri
 
 - The SKR 3 may contain an STM32H723 or STM32H743. Inspect the physical chip and build for the exact processor with a 128 KiB bootloader, 25 MHz crystal, and USB on PA11/PA12.
 - PB9 is FDCAN transmit, not the overhead-light output. The packages use controlled FAN0/PB7 for the optional 24 V LED, FAN1/PB6 for part cooling, and FAN2/PB5 for the hotend fan.
-- `stealthchop_threshold: 999999` enables stealthChop for almost all movement. The Maxout packages use `0` for spreadCycle performance.
-- Klipper documents TMC current as RMS amps and discourages separate hold-current reductions. The old hold-current entries have been removed.
+- `stealthchop_threshold: 999999` enables StealthChop for almost all movement. The proven Neptune 3 Max SKR package now preserves its quieter CB1-tested X/Y/Z settings on both CB1 and CM4 hosts. Other model packages retain their separate SpreadCycle engineering baselines.
+- Klipper TMC current values are RMS amps. The Neptune 3 Max package preserves its tested run/hold currents; do not copy those motor-specific values to a different machine without verifying its motors and cooling.
 - BIGTREETECH rates the SKR 3 heated-bed output at 10 A. Plus and Max installers must verify the actual bed load and use a correctly rated external MOSFET when necessary.
 - A harness is not assumed plug-and-play merely because its connector fits. Voltage, polarity, coil pairs, and pin order must be checked.
 
@@ -133,7 +147,7 @@ KlipperScreen's **Move** panel also includes **Disable Motors** beside **Home**.
 
 ## Validation
 
-All four SKR ZIPs were extracted after creation and checked for missing includes, duplicate Klipper sections, legacy hold-current/stealthChop values, MCU placeholders, required TMC sections, and accidental machine-specific SAVE_CONFIG blocks. Structural validation cannot replace electrical inspection or a controlled commissioning test on each physical printer.
+All four SKR ZIPs were extracted after creation and checked for missing includes, duplicate Klipper sections, expected per-model TMC mode/current values, MCU placeholders, required TMC sections, and accidental machine-specific SAVE_CONFIG blocks. Structural validation cannot replace electrical inspection or a controlled commissioning test on each physical printer.
 
 ## Credits
 

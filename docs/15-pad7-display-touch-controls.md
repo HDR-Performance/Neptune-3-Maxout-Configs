@@ -14,6 +14,7 @@ The HDR package installer enables these controls automatically when it detects K
 - Four fixed screen-orientation choices under **More > Screen Rotation**
 - Matching X11 touchscreen calibration for every orientation
 - Persistent selection across KlipperScreen and Pad restarts
+- Automatic installation of the optional [Neptune Maxout visual theme](16-neptune-maxout-klipperscreen-theme.md) through the main package installer
 
 The four choices are explicit. Selecting the same orientation twice keeps that orientation; it does not rotate another 90 degrees.
 
@@ -52,6 +53,9 @@ Optional installer controls:
 
 # Install printer configuration without changing KlipperScreen or display settings
 ./hdr-neptune-install.sh --package neptune3max-robin --pad7-ui off
+
+# Keep the display controls but leave the current visual theme unchanged
+./hdr-neptune-install.sh --package neptune3max-robin --pad7-theme off
 ```
 
 ## Install or repair only the Pad 7 controls
@@ -64,6 +68,8 @@ curl -fsSL https://raw.githubusercontent.com/HDR-Performance/Neptune-3-Maxout-Co
 chmod +x install-pad7-ui.sh
 ./install-pad7-ui.sh
 ```
+
+If you want only rotationâ€”without the Maxout macro/menu additionsâ€”use the dedicated [standalone rotation installer](19-pad7-rotation-only.md).
 
 The implementation is published for review:
 

@@ -3,7 +3,7 @@
 The Neptune Maxout theme includes an original short retro toy-laser chirp for KlipperScreen button presses. It supports both Pad 7 host choices:
 
 - **CM4:** audio is sent through HDMI0 to the Pad 7 display controller, then to its built-in amplifier and speaker. The tested setup uses PipeWire and WirePlumber so short interface sounds are not lost while the HDMI device wakes.
-- **CB1:** the installer keeps the CB1 system's normal default speaker output.
+- **CB1:** the installer reuses the original Pad 7 `/etc/scripts/ks_click.sh` and SoX/ALSA speaker path, replacing only the click audio with the Maxout laser WAV. It does not install CM4 PipeWire settings or add a duplicate GTK click hook.
 
 The normal GitHub installer enables this automatically whenever it detects a Pad 7 and installs the Neptune Maxout theme. The change does not affect Klipper motion, MCU pins, heaters, or printer wiring.
 
@@ -21,10 +21,10 @@ chmod +x install-pad7-audio.sh
 
 The installer:
 
-1. Requires an existing KlipperScreen installation. CB1 uses `aplay`; CM4 installs the tested PipeWire/WirePlumber audio stack when it is missing.
+1. Requires an existing KlipperScreen installation. CB1 reuses its factory SoX/ALSA click scripts; CM4 installs the tested PipeWire/WirePlumber audio stack when it is missing.
 2. Installs `maxout-laser.wav` under `/usr/local/share/neptune-maxout/sounds/`.
-3. Installs a non-blocking player at `/usr/local/bin/hdr-maxout-sound`.
-4. Creates a timestamped backup of `KlippyGtk.py` and hooks its central button factory, so standard buttons and macro buttons use the same feedback.
+3. On CB1, backs up `/etc/scripts/sound.sh` and points its existing click hook at the laser WAV.
+4. On CM4, installs a non-blocking player and backs up/hooks `KlippyGtk.py`, so standard buttons and macro buttons use the same feedback.
 5. On CM4 only, installs a WirePlumber rule that keeps the HDMI node ready for short sounds by setting `session.suspend-timeout-seconds = 0` and `node.pause-on-idle = false`.
 6. On CM4 only, enables the PipeWire, PipeWire-Pulse, and WirePlumber user services; selects HDMI0; and sets the sink to 100%.
 7. On CM4 only, backs up the active boot config and changes `hdmi_drive=1` to `hdmi_drive=2` so the Pad 7 HDMI audio path is enabled.

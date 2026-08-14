@@ -32,6 +32,7 @@ This documentation consolidates the useful material from the two original HDR Pe
 - [Pad 7 CB1/CM4 display rotation and touchscreen mapping](15-pad7-display-touch-controls.md)
 - [Neptune Maxout branded KlipperScreen theme](16-neptune-maxout-klipperscreen-theme.md)
 - [Pad 7 CM4/CB1 speaker audio and themed button sounds](17-pad7-sound.md)
+- [Standalone Pad 7 rotation installer for CB1 and CM4](19-pad7-rotation-only.md)
 - [Safe Raspberry Pi 4 host adaptation and SSH install](18-raspberry-pi4-ssh-install.md)
 
 ## What changed from the legacy guides
@@ -42,8 +43,8 @@ The original instructions were valuable working notes, but several details neede
 - A connector is never declared compatible from its shape alone. Voltage, polarity, pin order, and current must be verified.
 - The SKR 3 MCU may be an STM32H723 or STM32H743; the physical chip marking decides the build target.
 - PB9 is not used as the overhead-light output. The SKR packages use the board's controlled fan outputs.
-- `stealthchop_threshold: 0` is used for spreadCycle performance. A very large threshold enables stealthChop rather than disabling it.
-- TMC5160 current values are documented as RMS current, and separate hold-current reductions are not used.
+- The Neptune 3 Max SKR 3 EZ package uses the quieter, printer-tested TMC5160 StealthChop settings from the CB1 Pad 7 configuration. High-speed limits still require mechanical testing.
+- TMC5160 run and hold currents are documented as RMS current and match the proven Maxout motor configuration.
 - A single accelerometer must be moved between the toolhead and bed when calibrating a bed-slinger's X and Y axes.
 - Moonraker recovery now preserves the existing installation and begins with logs and service status instead of replacing the whole configuration blindly.
 

@@ -10,6 +10,18 @@ ASVC_FILE="${HOME}/printer_data/moonraker.asvc"
 ROTATOR_SOURCE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/hdr-pad7-rotate"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 TEMP_FILE=""
+ROTATION_ONLY=0
+
+for ARG in "$@"; do
+  case "${ARG}" in
+    --rotation-only) ROTATION_ONLY=1 ;;
+    -h|--help)
+      printf 'Usage: %s [--rotation-only]\n' "$0"
+      exit 0
+      ;;
+    *) printf 'ERROR: Unknown option: %s\n' "${ARG}" >&2; exit 2 ;;
+  esac
+done
 
 cleanup() {
   [[ -z "${TEMP_FILE}" ]] || rm -f -- "${TEMP_FILE}"
@@ -63,9 +75,12 @@ EOF
 sudo install -m 0644 "${SETTINGS_TMP}" /etc/default/hdr-pad7-rotation
 rm -f -- "${SETTINGS_TMP}"
 
-if [[ -f /etc/X11/xorg.conf.d/90-hdr-pad7-monitor.conf ]]; then
-  sudo cp -a /etc/X11/xorg.conf.d/90-hdr-pad7-monitor.conf \
-    "/etc/X11/xorg.conf.d/90-hdr-pad7-monitor.conf.hdr-backup-${STAMP}"
+# Older Pad 7 images commonly ship a fixed 90-monitor.conf rotation. Preserve
+# it for rollback; the HDR 99-* file deliberately loads after that factory
+# setting and therefore owns the final orientation.
+if [[ -f /etc/X11/xorg.conf.d/90-monitor.conf ]]; then
+  sudo cp -a /etc/X11/xorg.conf.d/90-monitor.conf \
+    "/etc/X11/xorg.conf.d/90-monitor.conf.hdr-backup-${STAMP}"
 fi
 if [[ -f /etc/udev/rules.d/51-hdr-pad7-touchscreen.rules ]]; then
   sudo cp -a /etc/udev/rules.d/51-hdr-pad7-touchscreen.rules \
@@ -109,6 +124,23 @@ EOF
   rm -f -- "${SERVICE_TMP}"
 done
 
+APPLY_SERVICE_TMP="$(mktemp)"
+cat >"${APPLY_SERVICE_TMP}" <<'EOF'
+[Unit]
+Description=Apply saved HDR Pad 7 orientation after KlipperScreen starts
+After=KlipperScreen.service
+Wants=KlipperScreen.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'sleep 5; angle=$(cat /etc/hdr-pad7-rotation.state 2>/dev/null || echo 0); HDR_PAD7_SKIP_KS_RESTART=1 /usr/local/sbin/hdr-pad7-rotate "$angle"'
+
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo install -m 0644 "${APPLY_SERVICE_TMP}" /etc/systemd/system/hdr-pad7-apply.service
+rm -f -- "${APPLY_SERVICE_TMP}"
+
 mkdir -p "${CONFIG_DIR}" "$(dirname "${ASVC_FILE}")"
 if [[ -f "${KLIPPERSCREEN_CONFIG}" ]]; then
   cp -a "${KLIPPERSCREEN_CONFIG}" "${KLIPPERSCREEN_CONFIG}.hdr-backup-${STAMP}"
@@ -131,6 +163,7 @@ if [[ -f "${KLIPPERSCREEN_CONFIG}" ]]; then
     !skip {print}
   ' "${KLIPPERSCREEN_CONFIG}" >"${MENU_CLEAN}"
 fi
+if [[ ${ROTATION_ONLY} -eq 0 ]]; then
 cat >"${MENU_BLOCK}" <<'EOF'
 
 # HDR Performance Pad 7 controls begin
@@ -184,6 +217,40 @@ method: machine.services.restart
 params: {"service":"hdr-pad7-rotate-270"}
 # HDR Performance Pad 7 controls end
 EOF
+else
+cat >"${MENU_BLOCK}" <<'EOF'
+
+# HDR Performance Pad 7 controls begin
+[menu __main more hdr_rotation]
+name: Screen Rotation
+icon: settings
+
+[menu __main more hdr_rotation original]
+name: Original Landscape
+icon: refresh
+method: machine.services.restart
+params: {"service":"hdr-pad7-rotate-0"}
+
+[menu __main more hdr_rotation portrait_right]
+name: Portrait Right
+icon: refresh
+method: machine.services.restart
+params: {"service":"hdr-pad7-rotate-90"}
+
+[menu __main more hdr_rotation landscape_inverted]
+name: Inverted Landscape
+icon: refresh
+method: machine.services.restart
+params: {"service":"hdr-pad7-rotate-180"}
+
+[menu __main more hdr_rotation portrait_left]
+name: Portrait Left
+icon: refresh
+method: machine.services.restart
+params: {"service":"hdr-pad7-rotate-270"}
+# HDR Performance Pad 7 controls end
+EOF
+fi
 
 # KlipperScreen owns everything below its auto-generated marker. Insert custom
 # menu sections before that marker so a settings save cannot erase them.
@@ -203,6 +270,11 @@ install -m 0644 "${MENU_TMP}" "${KLIPPERSCREEN_CONFIG}"
 rm -f -- "${MENU_CLEAN}" "${MENU_BLOCK}" "${MENU_TMP}"
 
 touch "${ASVC_FILE}"
+# Some older images leave this file without a final newline. Add one before
+# appending so the first HDR service cannot be joined to the prior service.
+if [[ -s "${ASVC_FILE}" ]] && [[ "$(tail -c 1 "${ASVC_FILE}" | wc -l)" -eq 0 ]]; then
+  printf '\n' >>"${ASVC_FILE}"
+fi
 sed -i '/^hdr-pad7-rotate$/d' "${ASVC_FILE}"
 for ORIENTATION in 0 90 180 270; do
   SERVICE_NAME="hdr-pad7-rotate-${ORIENTATION}"
@@ -211,6 +283,7 @@ done
 
 sudo systemctl daemon-reload
 sudo systemctl enable --now \
+  hdr-pad7-apply.service \
   hdr-pad7-rotate-0.service \
   hdr-pad7-rotate-90.service \
   hdr-pad7-rotate-180.service \
@@ -230,6 +303,8 @@ printf 'Display: %s\nTouchscreen: %s\n' "${DISPLAY_CONNECTOR}" "${TOUCH_NAME}"
 printf 'Touchscreen offsets: landscape %s degrees, portrait %s degrees\n' \
   "${LANDSCAPE_TOUCH_OFFSET}" "${PORTRAIT_TOUCH_OFFSET}"
 printf 'KlipperScreen: More > Screen Rotation > choose an explicit orientation\n'
-printf 'KlipperScreen: Main Menu > Macros\n'
-printf 'Motor release: Move > Disable Motors (the motor-off icon beside Home).\n'
-printf 'After releasing motors, home again before any controlled move.\n'
+if [[ ${ROTATION_ONLY} -eq 0 ]]; then
+  printf 'KlipperScreen: Main Menu > Macros\n'
+  printf 'Motor release: Move > Disable Motors (the motor-off icon beside Home).\n'
+  printf 'After releasing motors, home again before any controlled move.\n'
+fi

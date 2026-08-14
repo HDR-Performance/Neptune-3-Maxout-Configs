@@ -15,6 +15,7 @@ STAMP="$(date +%Y%m%d-%H%M%S)"
 SOURCE_SOUND="${HDR_SOUND_FILE:-}"
 BOOT_CHANGED=0
 IS_CM4=0
+IS_CB1=0
 TEMP_DIR=""
 
 cleanup() {
@@ -46,6 +47,8 @@ model=""
 [[ -r /proc/device-tree/model ]] && model="$(tr -d '\0' </proc/device-tree/model)"
 if [[ "${model}" == *"Compute Module 4"* ]]; then
   IS_CM4=1
+elif [[ "${model}" == *"BQ-H616"* ]]; then
+  IS_CB1=1
 fi
 
 if [[ ${IS_CM4} -eq 1 ]]; then
@@ -107,6 +110,27 @@ fi
 
 sudo install -d -m 0755 "${SOUND_DIR}"
 sudo install -m 0644 "${SOURCE_SOUND}" "${SOUND_FILE}"
+
+# The stock Pad 7 CB1 image already has a working SoX/ALSA click path wired
+# into KlipperScreen. Reuse it instead of adding the CM4/PipeWire hook or a
+# second GTK click handler.
+if [[ ${IS_CB1} -eq 1 && -x /etc/scripts/ks_click.sh && -f /etc/scripts/sound.sh ]] && \
+   command -v play >/dev/null 2>&1; then
+  sudo cp -a /etc/scripts/sound.sh "/etc/scripts/sound.sh.hdr-audio-backup-${STAMP}"
+  CB1_SOUND_TMP="${TEMP_DIR}/sound.sh"
+  cat >"${CB1_SOUND_TMP}" <<EOF
+#!/bin/bash
+# Neptune Maxout KlipperScreen sound using the Pad 7 CB1 factory ALSA path.
+export AUDIODRIVER=alsa
+play -q ${SOUND_FILE} >/dev/null 2>&1 &
+EOF
+  sudo install -m 0755 "${CB1_SOUND_TMP}" /etc/scripts/sound.sh
+  sudo systemctl restart KlipperScreen.service
+  printf '\nNeptune Maxout Pad 7 CB1 laser sound installed.\n'
+  printf 'Sound: %s\n' "${SOUND_FILE}"
+  printf 'CB1 sound hook: /etc/scripts/ks_click.sh -> /etc/scripts/sound.sh\n'
+  exit 0
+fi
 
 cat >"${TEMP_DIR}/hdr-maxout-sound" <<'EOF'
 #!/usr/bin/env bash

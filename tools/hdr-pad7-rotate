@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 SETTINGS_FILE="/etc/default/hdr-pad7-rotation"
 STATE_FILE="/etc/hdr-pad7-rotation.state"
-MONITOR_FILE="/etc/X11/xorg.conf.d/90-hdr-pad7-monitor.conf"
+MONITOR_FILE="/etc/X11/xorg.conf.d/99-hdr-pad7-monitor.conf"
 TOUCH_FILE="/etc/X11/xorg.conf.d/91-hdr-pad7-touchscreen.conf"
 LEGACY_TOUCH_FILE="/etc/udev/rules.d/51-hdr-pad7-touchscreen.rules"
 
@@ -135,7 +135,7 @@ Section "InputClass"
     MatchProduct "${TOUCH_NAME}"
     MatchIsTouchscreen "on"
     Driver "libinput"
-    Option "TransformationMatrix" "${TOUCH_MATRIX}"
+    Option "CalibrationMatrix" "${TOUCH_MATRIX}"
 EndSection
 EOF
 
@@ -151,6 +151,25 @@ apply_theme_background
 
 printf 'Pad 7 display set to %s degrees; touchscreen matrix set to %s degrees (layout offset %s).\n' \
   "${ANGLE}" "${TOUCH_ANGLE}" "${ACTIVE_TOUCH_OFFSET}"
-if systemctl is-active --quiet KlipperScreen.service; then
+if [[ "${HDR_PAD7_SKIP_KS_RESTART:-0}" != "1" ]] && \
+   systemctl is-active --quiet KlipperScreen.service; then
   systemctl restart KlipperScreen.service
+  sleep 2
+fi
+
+# CB1 images keep Xorg alive across some KlipperScreen operations and also
+# ship a fixed factory rotation. Apply the selected display and touch mapping
+# after any KlipperScreen restart so the live X session always finishes in the
+# requested state.
+SERVICE_USER="$(systemctl show KlipperScreen.service --property=User --value 2>/dev/null || true)"
+[[ -n "${SERVICE_USER}" ]] || SERVICE_USER="biqu"
+if runuser -u "${SERVICE_USER}" -- env DISPLAY=:0 xrandr --query >/dev/null 2>&1; then
+  runuser -u "${SERVICE_USER}" -- env DISPLAY=:0 \
+    xrandr --output "${DISPLAY_CONNECTOR}" --rotate "${XORG_ROTATION}"
+  # Xorg has already loaded TOUCH_MATRIX through CalibrationMatrix. Keep the
+  # live Coordinate Transformation Matrix neutral; applying TOUCH_MATRIX here
+  # as well double-rotates CB1 touch input in portrait orientations.
+  runuser -u "${SERVICE_USER}" -- env DISPLAY=:0 \
+    xinput set-prop "${TOUCH_NAME}" "Coordinate Transformation Matrix" \
+      1 0 0 0 1 0 0 0 1
 fi
