@@ -122,6 +122,14 @@ Pad 7 screen and touch controls use `--pad7-ui auto` by default. Auto mode requi
 
 The branded theme similarly uses `--pad7-theme auto`. Theme installation includes the Pad 7 speaker setup and original Maxout laser button feedback on both CM4 and CB1. A CM4 may require the one reboot reported by the installer after HDMI audio is enabled. Use `--pad7-theme off` to retain the Pad's current theme and sound behavior, read the [Neptune Maxout theme guide](16-neptune-maxout-klipperscreen-theme.md), or use the dedicated [Pad 7 sound guide](17-pad7-sound.md).
 
+Moonraker Update Manager registration uses `--moonraker-updater auto` by default
+for every supported printer/controller package. The installed entry records the
+package selected during installation, so later updates refresh that exact
+Neptune model and board application instead of guessing from bed dimensions or
+pin names. Use `--moonraker-updater off` to skip registration or
+`--moonraker-updater on` to require it and stop if Moonraker cannot be configured
+safely.
+
 ## After installation
 
 The script intentionally leaves Klipper untouched until the user reviews the files.
@@ -166,3 +174,4 @@ cp -a Neptune3Max-HDR-Performance-Pad7-Complete-Guide/config/. ~/printer_data/co
 Replace the ZIP and extracted folder names with the exact package selected from the repository. The automated installer is safer because it verifies the expected package layout and manages the backup path consistently.
 
 Return to the [documentation index](README.md).
+
