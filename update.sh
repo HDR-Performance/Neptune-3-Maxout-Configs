@@ -88,7 +88,9 @@ temp_dir="$(mktemp -d)"
 trap 'rm -rf -- "${temp_dir}"' EXIT
 download "${RAW_BASE}/${ZIP}" "${temp_dir}/package.zip"
 command -v unzip >/dev/null 2>&1 || die "unzip is required."
-unzip -q "${temp_dir}/package.zip" -d "${temp_dir}/package"
+unzip_status=0
+unzip -q "${temp_dir}/package.zip" -d "${temp_dir}/package" || unzip_status=$?
+[[ ${unzip_status} -le 1 ]] || die "Package extraction failed with unzip status ${unzip_status}."
 # Packages are produced on Windows and may retain directory mode 0644. A normal
 # recursive chmod cannot enter those directories before changing them, so walk
 # top-down and grant owner traversal before descending. This touches only the
