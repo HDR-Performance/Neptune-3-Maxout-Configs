@@ -89,10 +89,28 @@ trap 'rm -rf -- "${temp_dir}"' EXIT
 download "${RAW_BASE}/${ZIP}" "${temp_dir}/package.zip"
 command -v unzip >/dev/null 2>&1 || die "unzip is required."
 unzip -q "${temp_dir}/package.zip" -d "${temp_dir}/package"
-# Packages are produced on Windows and may retain read-only directory modes.
-# Normalize only the temporary extraction tree so validation and cleanup work
-# under the unprivileged Moonraker watcher account.
-chmod -R u+rwx "${temp_dir}/package"
+# Packages are produced on Windows and may retain directory mode 0644. A normal
+# recursive chmod cannot enter those directories before changing them, so walk
+# top-down and grant owner traversal before descending. This touches only the
+# disposable extraction tree.
+command -v python3 >/dev/null 2>&1 || die "python3 is required to normalize package permissions."
+python3 - "${temp_dir}/package" <<'PY'
+import os
+import stat
+import sys
+
+root = sys.argv[1]
+owner_rw = stat.S_IRUSR | stat.S_IWUSR
+owner_rwx = owner_rw | stat.S_IXUSR
+for current, directories, files in os.walk(root, topdown=True):
+    os.chmod(current, os.stat(current).st_mode | owner_rwx)
+    for name in directories:
+        path = os.path.join(current, name)
+        os.chmod(path, os.stat(path).st_mode | owner_rwx)
+    for name in files:
+        path = os.path.join(current, name)
+        os.chmod(path, os.stat(path).st_mode | owner_rw)
+PY
 source_config="$(find "${temp_dir}/package" -type d -name config -print -quit)"
 [[ -n "${source_config}" && -d "${source_config}/custom" && -f "${source_config}/KAMP_Settings.cfg" ]] || die "Downloaded package structure is invalid."
 
