@@ -29,7 +29,7 @@ if [[ -d "${REPO_DIR}/.git" ]]; then
   if git -C "${REPO_DIR}" show-ref --verify --quiet "refs/heads/${BRANCH}"; then
     git -C "${REPO_DIR}" switch "${BRANCH}"
   else
-    git -C "${REPO_DIR}" switch --track -c "${BRANCH}" "origin/${BRANCH}"
+    git -C "${REPO_DIR}" switch -c "${BRANCH}" "origin/${BRANCH}"
   fi
   git -C "${REPO_DIR}" pull --ff-only origin "${BRANCH}"
 else
