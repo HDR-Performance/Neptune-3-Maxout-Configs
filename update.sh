@@ -10,6 +10,9 @@ INCLUDE_PRINTER_CFG=0
 ASSUME_YES=0
 PAD7_UI_MODE="${HDR_PAD7_UI:-auto}"
 PAD7_THEME_MODE="${HDR_PAD7_THEME:-auto}"
+MOONRAKER_KAMP_MODE="${HDR_MOONRAKER_KAMP:-auto}"
+SKR_USB_MODE="${HDR_SKR_USB_RECOVERY:-auto}"
+MOONRAKER_UPDATER_MODE="${HDR_MOONRAKER_UPDATER:-auto}"
 
 die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 download() { curl --fail --location --silent --show-error "$1" --output "$2"; }
@@ -27,6 +30,9 @@ Options:
   --include-printer-cfg  Also replace printer.cfg (advanced; re-check calibration and MCU ID).
   --pad7-ui MODE         Refresh rotation/touch controls: auto (default), on, or off.
   --pad7-theme MODE      Refresh Maxout theme/sound: auto (default), on, or off.
+  --moonraker-kamp MODE  Safe KAMP Moonraker setup: auto (default), on, or off.
+  --skr-usb MODE         CM4/SKR USB recovery: auto (default), on, or off.
+  --moonraker-updater MODE  Register in Mainsail: auto (default), on, or off.
   --yes                  Skip the UPDATE confirmation.
   --config-dir PATH      Override ~/printer_data/config.
   -h, --help             Show this help.
@@ -43,6 +49,9 @@ while [[ $# -gt 0 ]]; do
     --include-printer-cfg) INCLUDE_PRINTER_CFG=1; shift ;;
     --pad7-ui) [[ $# -ge 2 ]] || die "--pad7-ui requires a value"; PAD7_UI_MODE="$2"; shift 2 ;;
     --pad7-theme) [[ $# -ge 2 ]] || die "--pad7-theme requires a value"; PAD7_THEME_MODE="$2"; shift 2 ;;
+    --moonraker-kamp) [[ $# -ge 2 ]] || die "--moonraker-kamp requires a value"; MOONRAKER_KAMP_MODE="$2"; shift 2 ;;
+    --skr-usb) [[ $# -ge 2 ]] || die "--skr-usb requires a value"; SKR_USB_MODE="$2"; shift 2 ;;
+    --moonraker-updater) [[ $# -ge 2 ]] || die "--moonraker-updater requires a value"; MOONRAKER_UPDATER_MODE="$2"; shift 2 ;;
     --yes) ASSUME_YES=1; shift ;;
     --config-dir) [[ $# -ge 2 ]] || die "--config-dir requires a value"; CONFIG_DIR="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
@@ -52,6 +61,9 @@ done
 
 case "${PAD7_UI_MODE}" in auto|on|off) ;; *) die "--pad7-ui must be auto, on, or off." ;; esac
 case "${PAD7_THEME_MODE}" in auto|on|off) ;; *) die "--pad7-theme must be auto, on, or off." ;; esac
+case "${MOONRAKER_KAMP_MODE}" in auto|on|off) ;; *) die "--moonraker-kamp must be auto, on, or off." ;; esac
+case "${SKR_USB_MODE}" in auto|on|off) ;; *) die "--skr-usb must be auto, on, or off." ;; esac
+case "${MOONRAKER_UPDATER_MODE}" in auto|on|off) ;; *) die "--moonraker-updater must be auto, on, or off." ;; esac
 
 if [[ -z "${PACKAGE_ID}" && -f "${CONFIG_DIR}/.hdr-performance-install" ]]; then
   PACKAGE_ID="$(sed -n 's/^package_id=//p' "${CONFIG_DIR}/.hdr-performance-install" | head -n1)"
@@ -86,6 +98,8 @@ printf 'Updates: custom/, KAMP_Settings.cfg, HDR_Documentation/'
 [[ ${INCLUDE_PRINTER_CFG} -eq 1 ]] && printf ', printer.cfg'
 printf '\nPreserves: Moonraker, Mainsail, KlipperScreen, updater-managed KAMP/, and all other host files.\n'
 printf 'Pad 7 rotation/touch: %s; Maxout theme/sound: %s\n' "${PAD7_UI_MODE}" "${PAD7_THEME_MODE}"
+printf 'Moonraker/KAMP: %s; CM4/SKR USB recovery: %s\n' "${MOONRAKER_KAMP_MODE}" "${SKR_USB_MODE}"
+printf 'Moonraker Update Manager registration: %s\n' "${MOONRAKER_UPDATER_MODE}"
 if [[ ${ASSUME_YES} -ne 1 ]]; then
   printf 'Type UPDATE to continue: '
   read -r answer
@@ -156,6 +170,83 @@ run_pad7_theme_update() {
   HDR_CONFIG_DIR="${CONFIG_DIR}" HDR_RAW_BASE="${RAW_BASE}" "${installer}"
 }
 
+detect_host_type() {
+  local model=""
+  [[ -r /proc/device-tree/model ]] && model="$(tr -d '\0' </proc/device-tree/model)"
+  case "${model}" in
+    *"Compute Module 4"*) printf 'cm4' ;;
+    *"BTT-CB1"*|*"BIGTREETECH CB1"*) printf 'cb1' ;;
+    *"Raspberry Pi 4 Model"*) printf 'pi4' ;;
+    *) printf 'unknown' ;;
+  esac
+}
+
+run_moonraker_kamp_update() {
+  local installer="${temp_dir}/configure-moonraker-kamp.sh"
+  if [[ "${HDR_MOONRAKER_HOOK:-0}" == 1 ]]; then
+    printf 'Running inside Moonraker Update Manager; Moonraker restart preflight skipped.\n'
+    return 0
+  fi
+  case "${MOONRAKER_KAMP_MODE}" in
+    off) printf 'Moonraker KAMP preflight disabled.\n'; return 0 ;;
+    auto) [[ -f "${CONFIG_DIR}/moonraker.conf" ]] || { printf 'moonraker.conf not found; KAMP preflight skipped.\n'; return 0; } ;;
+    on) [[ -f "${CONFIG_DIR}/moonraker.conf" ]] || return 1 ;;
+  esac
+  download "${RAW_BASE}/tools/configure-moonraker-kamp.sh" "${installer}"
+  chmod +x "${installer}"
+  HDR_CONFIG_DIR="${CONFIG_DIR}" "${installer}"
+}
+
+current_printer_mcu_path() {
+  awk '
+    /^\[mcu\][[:space:]]*(#.*)?$/ {in_mcu=1; next}
+    in_mcu && /^\[/ {exit}
+    in_mcu && /^[[:space:]]*serial[[:space:]]*:/ {
+      sub(/^[[:space:]]*serial[[:space:]]*:[[:space:]]*/, "")
+      sub(/[[:space:]]*(#.*)?$/, "")
+      print
+      exit
+    }
+  ' "${CONFIG_DIR}/printer.cfg"
+}
+
+run_skr_usb_update() {
+  local host_type mcu_path installer
+  [[ "${PACKAGE_ID}" == *-skr3ez ]] || return 0
+  host_type="$(detect_host_type)"
+  case "${SKR_USB_MODE}" in
+    off) printf 'SKR USB recovery disabled.\n'; return 0 ;;
+    auto) [[ "${host_type}" == cm4 ]] || { printf 'Host %s does not need automatic CM4/SKR USB recovery.\n' "${host_type}"; return 0; } ;;
+    on) ;;
+  esac
+  mcu_path="$(current_printer_mcu_path)"
+  if [[ "${mcu_path}" != /dev/serial/by-id/* ]]; then
+    printf 'WARNING: No stable SKR /dev/serial/by-id path was found in printer.cfg; USB recovery skipped.\n' >&2
+    [[ "${SKR_USB_MODE}" != on ]] && return 0
+    return 1
+  fi
+  installer="${temp_dir}/install-skr-usb-recovery.sh"
+  download "${RAW_BASE}/tools/install-skr-usb-recovery.sh" "${installer}"
+  chmod +x "${installer}"
+  "${installer}" "${mcu_path}"
+}
+
+run_moonraker_updater_registration() {
+  local installer="${temp_dir}/install-moonraker-update-manager.sh"
+  if [[ "${HDR_MOONRAKER_HOOK:-0}" == 1 ]]; then
+    printf 'Running from Moonraker Update Manager; registration refresh skipped.\n'
+    return 0
+  fi
+  case "${MOONRAKER_UPDATER_MODE}" in
+    off) printf 'Moonraker updater registration disabled.\n'; return 0 ;;
+    auto) [[ -f "${CONFIG_DIR}/moonraker.conf" ]] || { printf 'moonraker.conf not found; updater registration skipped.\n'; return 0; } ;;
+    on) [[ -f "${CONFIG_DIR}/moonraker.conf" ]] || return 1 ;;
+  esac
+  download "${RAW_BASE}/tools/install-moonraker-update-manager.sh" "${installer}"
+  chmod +x "${installer}"
+  HDR_CONFIG_DIR="${CONFIG_DIR}" "${installer}"
+}
+
 if ! run_pad7_ui_update; then
   [[ "${PAD7_UI_MODE}" != on ]] || die "Required Pad 7 rotation/touch refresh failed."
   printf 'WARNING: Package files updated, but the optional Pad 7 rotation/touch refresh failed.\n' >&2
@@ -164,6 +255,19 @@ if ! run_pad7_theme_update; then
   [[ "${PAD7_THEME_MODE}" != on ]] || die "Required Neptune Maxout theme refresh failed."
   printf 'WARNING: Package files updated, but the optional theme/sound refresh failed.\n' >&2
 fi
+if ! run_moonraker_kamp_update; then
+  [[ "${MOONRAKER_KAMP_MODE}" != on ]] || die "Required Moonraker KAMP preflight failed."
+  printf 'WARNING: Package files updated, but the optional Moonraker KAMP preflight failed or rolled back.\n' >&2
+fi
+if ! run_skr_usb_update; then
+  [[ "${SKR_USB_MODE}" != on ]] || die "Required CM4/SKR USB recovery refresh failed."
+  printf 'WARNING: Package files updated, but the optional CM4/SKR USB recovery refresh failed.\n' >&2
+fi
+if ! run_moonraker_updater_registration; then
+  [[ "${MOONRAKER_UPDATER_MODE}" != on ]] || die "Required Moonraker updater registration failed."
+  printf 'WARNING: Package files updated, but Update Manager registration failed or rolled back.\n' >&2
+fi
 
 printf 'OTA update staged successfully. Backup: %s\n' "${backup}"
 printf 'Review the files in Mainsail, then issue RESTART when ready.\n'
+
