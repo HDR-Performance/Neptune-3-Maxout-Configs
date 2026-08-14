@@ -45,14 +45,15 @@ Moonraker's Update Manager. Its clean Git checkout is stored at:
 
 The checkout is intentionally outside `~/printer_data/config`, preventing the
 overlapping inotify-watch warning. When the user presses **Update**, Moonraker
-pulls the repository and then invokes `tools/moonraker-update-hook.sh`. The hook
-runs the same package-aware `update.sh --yes` workflow described below, using
-the package identity recorded during installation.
+pulls the repository. A dedicated systemd path unit watches that checkout's Git
+HEAD log and then invokes `tools/moonraker-update-hook.sh`. The hook runs the
+same package-aware `update.sh --yes` workflow described below, using the package
+identity recorded during installation.
 
-Moonraker currently supports `install_script` for `git_repo` extensions but
-marks it deprecated. The hook is isolated in one file so it can be replaced if
-Moonraker removes that compatibility option in a future release. Use
-`--moonraker-updater off` to skip this registration.
+The watcher is used because Moonraker's deprecated `install_script` field is a
+dependency-package parser, not a general post-update callback. The watcher and
+hook are installed outside Klipper, do not issue printer motion, and keep the
+Git checkout pristine. Use `--moonraker-updater off` to skip registration.
 
 The registrar supports `HDR_BRANCH` for maintainer testing. Normal users should
 leave it unset so the checkout and Update Manager remain pinned to `main`.
