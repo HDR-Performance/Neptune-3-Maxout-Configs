@@ -19,6 +19,13 @@ enable_object_processing: True
 
 Restart Moonraker after changing `moonraker.conf`.
 
+The SSH installer runs a safe Moonraker preflight by default. It creates a
+timestamped `moonraker.conf.hdr-kamp-backup-*`, enables object processing in the
+existing `[file_manager]` section without duplicating it, and disables only a
+known KAMP update-manager entry whose repository path is incorrectly nested
+inside the config root. If Moonraker fails to restart, the backup is restored
+automatically. Use `--moonraker-kamp off` to leave Moonraker untouched.
+
 ## Package layout
 
 The HDR packages use:
