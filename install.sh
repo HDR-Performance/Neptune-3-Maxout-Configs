@@ -13,6 +13,7 @@ PAD7_UI_MODE="${HDR_PAD7_UI:-auto}"
 PAD7_THEME_MODE="${HDR_PAD7_THEME:-auto}"
 SKR_USB_MODE="${HDR_SKR_USB_RECOVERY:-auto}"
 MOONRAKER_KAMP_MODE="${HDR_MOONRAKER_KAMP:-auto}"
+MOONRAKER_UPDATER_MODE="${HDR_MOONRAKER_UPDATER:-auto}"
 ASSUME_YES=0
 DRY_RUN=0
 TEMP_DIR=""
@@ -51,6 +52,7 @@ Options:
   --pad7-theme MODE  Neptune Maxout theme: auto (default), on, or off.
   --skr-usb MODE      SKR USB recovery: auto (CM4 default), on, or off.
   --moonraker-kamp MODE  KAMP Moonraker preflight: auto (default), on, or off.
+  --moonraker-updater MODE  Register Maxout updater: auto (default), on, or off.
   --config-dir PATH  Override ~/printer_data/config.
   --dry-run          Download and inspect, but do not change the printer.
   --yes              Skip the final INSTALL confirmation. Does not guess an MCU ID.
@@ -405,6 +407,26 @@ configure_moonraker_kamp() {
   fi
 }
 
+install_moonraker_updater() {
+  local registrar="${TEMP_DIR}/install-moonraker-update-manager.sh"
+  case "${MOONRAKER_UPDATER_MODE}" in
+    off) info "Moonraker Neptune Maxout updater registration disabled"; return 0 ;;
+    auto)
+      [[ -f "${CONFIG_DIR}/moonraker.conf" ]] || { info "moonraker.conf not found; updater registration skipped"; return 0; }
+      ;;
+    on) [[ -f "${CONFIG_DIR}/moonraker.conf" ]] || die "Required moonraker.conf is missing from ${CONFIG_DIR}." ;;
+    *) die "--moonraker-updater must be auto, on, or off." ;;
+  esac
+
+  info "Registering Neptune-Maxout-Configs with Moonraker Update Manager"
+  download_file "${RAW_BASE}/tools/install-moonraker-update-manager.sh" "${registrar}"
+  chmod +x "${registrar}"
+  if ! HDR_CONFIG_DIR="${CONFIG_DIR}" "${registrar}"; then
+    [[ "${MOONRAKER_UPDATER_MODE}" != on ]] || die "Required Moonraker updater registration failed."
+    printf 'WARNING: Printer files were installed, but the optional Moonraker updater registration failed or rolled back.\n' >&2
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --package) [[ $# -ge 2 ]] || die "--package requires a value."; PACKAGE_ID="$2"; shift 2 ;;
@@ -414,6 +436,7 @@ while [[ $# -gt 0 ]]; do
     --pad7-theme) [[ $# -ge 2 ]] || die "--pad7-theme requires a value."; PAD7_THEME_MODE="$2"; shift 2 ;;
     --skr-usb) [[ $# -ge 2 ]] || die "--skr-usb requires a value."; SKR_USB_MODE="$2"; shift 2 ;;
     --moonraker-kamp) [[ $# -ge 2 ]] || die "--moonraker-kamp requires a value."; MOONRAKER_KAMP_MODE="$2"; shift 2 ;;
+    --moonraker-updater) [[ $# -ge 2 ]] || die "--moonraker-updater requires a value."; MOONRAKER_UPDATER_MODE="$2"; shift 2 ;;
     --config-dir) [[ $# -ge 2 ]] || die "--config-dir requires a value."; CONFIG_DIR="$2"; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
     --yes) ASSUME_YES=1; shift ;;
@@ -432,6 +455,7 @@ case "${PAD7_UI_MODE}" in auto|on|off) ;; *) die "--pad7-ui must be auto, on, or
 case "${PAD7_THEME_MODE}" in auto|on|off) ;; *) die "--pad7-theme must be auto, on, or off." ;; esac
 case "${SKR_USB_MODE}" in auto|on|off) ;; *) die "--skr-usb must be auto, on, or off." ;; esac
 case "${MOONRAKER_KAMP_MODE}" in auto|on|off) ;; *) die "--moonraker-kamp must be auto, on, or off." ;; esac
+case "${MOONRAKER_UPDATER_MODE}" in auto|on|off) ;; *) die "--moonraker-updater must be auto, on, or off." ;; esac
 
 printf '\nHDR Performance Neptune 3 installer\n'
 printf 'Package:    %s\n' "${PACKAGE_LABEL}"
@@ -442,6 +466,7 @@ printf 'Pad 7 UI:   %s\n' "${PAD7_UI_MODE}"
 printf 'Pad 7 theme:%s\n' " ${PAD7_THEME_MODE}"
 printf 'SKR USB:    %s\n' "${SKR_USB_MODE}"
 printf 'KAMP/Moonraker: %s\n' "${MOONRAKER_KAMP_MODE}"
+printf 'Moonraker updater: %s\n' "${MOONRAKER_UPDATER_MODE}"
 if [[ ${FRESH_INSTALL} -eq 1 ]]; then
   printf 'Mode:       fresh install (no existing printer.cfg)\n'
 fi
@@ -571,6 +596,7 @@ install_pad7_ui
 install_pad7_theme
 install_skr_usb_recovery
 configure_moonraker_kamp
+install_moonraker_updater
 
 UPDATE_SCRIPT="${HOME}/hdr-neptune-update.sh"
 if download_file "${RAW_BASE}/update.sh" "${UPDATE_SCRIPT}"; then
@@ -592,3 +618,4 @@ printf '  5. On a Pad 7, use More > Screen Rotation for the four fixed orientati
 printf '  6. The Neptune Maxout theme can be changed from KlipperScreen Settings.\n'
 printf '\nRestore command if needed:\n'
 printf '  bash "%s" "%s"\n' "${RESTORE_SCRIPT}" "${BACKUP_DIR}"
+
