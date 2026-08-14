@@ -9,12 +9,23 @@ BRANCH="${HDR_BRANCH:-main}"
 INCLUDE_NAME="moonraker-hdr-neptune-maxout.conf"
 INCLUDE_PATH="${CONFIG_DIR}/${INCLUDE_NAME}"
 STAMP="$(date +%Y%m%d-%H%M%S)"
+WATCH_SERVICE="hdr-neptune-maxout-update.service"
+WATCH_PATH="hdr-neptune-maxout-update.path"
+RUN_USER="$(id -un)"
+RUN_HOME="${HOME}"
+TEMP_DIR=""
+
+cleanup() {
+  [[ -z "${TEMP_DIR}" ]] || rm -rf -- "${TEMP_DIR}"
+}
+trap cleanup EXIT
 
 die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 
 [[ -d "${CONFIG_DIR}" && "$(basename "${CONFIG_DIR}")" == config ]] || die "Unsafe config directory: ${CONFIG_DIR}"
 [[ -f "${MOONRAKER_CONF}" ]] || die "Moonraker configuration not found: ${MOONRAKER_CONF}"
 command -v git >/dev/null 2>&1 || die "git is required."
+command -v systemctl >/dev/null 2>&1 || die "systemd is required."
 
 if [[ -e "${REPO_DIR}" && ! -d "${REPO_DIR}/.git" ]]; then
   die "${REPO_DIR} exists but is not the HDR Git repository. Move it manually before continuing."
@@ -44,6 +55,37 @@ fi
 
 chmod +x "${REPO_DIR}/update.sh" "${REPO_DIR}/tools/moonraker-update-hook.sh"
 
+TEMP_DIR="$(mktemp -d -t hdr-moonraker-updater.XXXXXX)"
+cat >"${TEMP_DIR}/${WATCH_SERVICE}" <<EOF
+[Unit]
+Description=HDR Neptune Maxout package-aware configuration update
+After=network-online.target moonraker.service
+
+[Service]
+Type=oneshot
+User=${RUN_USER}
+Environment=HOME=${RUN_HOME}
+Environment=HDR_MOONRAKER_HOOK=1
+ExecStart=/bin/bash ${REPO_DIR}/tools/moonraker-update-hook.sh
+EOF
+
+cat >"${TEMP_DIR}/${WATCH_PATH}" <<EOF
+[Unit]
+Description=Watch the HDR Neptune Maxout repository for Moonraker updates
+
+[Path]
+PathChanged=${REPO_DIR}/.git/logs/HEAD
+Unit=${WATCH_SERVICE}
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo install -m 0644 "${TEMP_DIR}/${WATCH_SERVICE}" "/etc/systemd/system/${WATCH_SERVICE}"
+sudo install -m 0644 "${TEMP_DIR}/${WATCH_PATH}" "/etc/systemd/system/${WATCH_PATH}"
+sudo systemctl daemon-reload
+sudo systemctl enable --now "${WATCH_PATH}"
+
 MOONRAKER_BACKUP="${MOONRAKER_CONF}.hdr-update-manager-backup-${STAMP}"
 cp -a "${MOONRAKER_CONF}" "${MOONRAKER_BACKUP}"
 [[ ! -e "${INCLUDE_PATH}" ]] || cp -a "${INCLUDE_PATH}" "${INCLUDE_PATH}.hdr-backup-${STAMP}"
@@ -57,7 +99,6 @@ channel: dev
 path: ${REPO_DIR}
 origin: ${ORIGIN}
 primary_branch: ${BRANCH}
-install_script: tools/moonraker-update-hook.sh
 is_system_service: False
 EOF
 
@@ -85,4 +126,5 @@ fi
 printf 'Registered Neptune-Maxout-Configs in Moonraker Update Manager.\n'
 printf 'Repository: %s\n' "${REPO_DIR}"
 printf 'Moonraker backup: %s\n' "${MOONRAKER_BACKUP}"
+printf 'Package update watcher: %s\n' "${WATCH_PATH}"
 
