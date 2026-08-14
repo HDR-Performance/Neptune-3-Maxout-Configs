@@ -58,6 +58,8 @@ Choose **Original Landscape**, **Portrait Right**, **Inverted Landscape**, or **
 
 The installer also adds a permanent **Macros** button to the KlipperScreen main menu. KlipperScreen's default macro panel normally lives under **More**; the top-level button makes the HDR controls easier to find. Public macros such as `MANUAL_Z_OFFSET_ADJUST`, `LOAD_FILAMENT`, `TOGGLE_HEAT_SOAK`, and `MAINTENANCE_STATUS` are shown. Internal helper macros whose names begin with an underscore remain hidden intentionally.
 
+Under **More**, the installer hides KlipperScreen's stock **Z Calibrate** shortcut and replaces it with **Z Calibrate + Clean**. The replacement uses its own menu ID so it cannot inherit the stock `panel: zcalibrate` action and accidentally bypass `MANUAL_Z_OFFSET_ADJUST`. It runs the homing, nozzle-heating, left-side purge/wipe, heater shutdown, and positioning sequence first. When the macro enters manual-probe mode, KlipperScreen automatically opens the normal TESTZ adjustment panel.
+
 To force a known orientation over SSH:
 
 ```text

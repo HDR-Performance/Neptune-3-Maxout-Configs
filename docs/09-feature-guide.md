@@ -41,6 +41,8 @@ The workflow:
 
 Use the Mainsail or KlipperScreen up/down TESTZ controls, choose **Accept**, then **Save Config**. Klipper writes the new value to the active root `printer.cfg`. The next run reads the newly saved value.
 
+On Pad 7 installations, use **More > Z Calibrate + Clean**. The installer intentionally disables the stock KlipperScreen Z-calibration shortcut because it starts `PROBE_CALIBRATE` directly and skips nozzle cleaning. The dedicated HDR button sends `MANUAL_Z_OFFSET_ADJUST`; KlipperScreen then opens its TESTZ panel automatically when the cleaning macro reaches calibration mode.
+
 The macro does not heat the bed.
 
 ## Filament controls
