@@ -74,7 +74,7 @@ The workflow:
 
 Use the Mainsail or KlipperScreen up/down TESTZ controls, choose **Accept**, then **Save Config**. Klipper writes the new value to the active root `printer.cfg`. The next run reads the newly saved value.
 
-On Pad 7 installations, use **More > Z Calibrate + Clean**. The installer intentionally disables the stock KlipperScreen Z-calibration shortcut because it starts `PROBE_CALIBRATE` directly and skips nozzle cleaning. The dedicated HDR setup panel lets the user select bed and nozzle targets, sends `MANUAL_Z_OFFSET_ADJUST`, and KlipperScreen then opens its TESTZ panel automatically when the cleaning macro reaches calibration mode.
+On Pad 7 installations, use **More > Z Calibrate + Clean**. The installer intentionally disables the stock KlipperScreen Z-calibration shortcut because it starts `PROBE_CALIBRATE` directly and skips nozzle cleaning. The dedicated HDR setup panel defaults the optional bed target to `50 C`, provides **Skip Bed Heat** and **Set & Continue** buttons, and retains an adjustable nozzle-cleaning target. When bed heating is selected, `MANUAL_Z_OFFSET_ADJUST` waits for the bed before heating the nozzle. KlipperScreen then opens its TESTZ panel automatically when the cleaning macro reaches calibration mode.
 
 ## Filament controls
 
@@ -132,3 +132,4 @@ PID macros validate the requested temperature and save the result. Re-run the ap
 Bed-tramming coordinates are model-specific. The standard Neptune 3 package does not invent unverified screw coordinates.
 
 Return to the [documentation index](README.md).
+
