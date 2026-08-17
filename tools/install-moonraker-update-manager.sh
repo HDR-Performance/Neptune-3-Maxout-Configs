@@ -63,9 +63,10 @@ After=network-online.target moonraker.service
 
 [Service]
 Type=oneshot
-User=${RUN_USER}
+User=root
 Environment=HOME=${RUN_HOME}
 Environment=HDR_MOONRAKER_HOOK=1
+Environment=HDR_RUN_USER=${RUN_USER}
 ExecStart=/bin/bash ${REPO_DIR}/tools/moonraker-update-hook.sh
 EOF
 

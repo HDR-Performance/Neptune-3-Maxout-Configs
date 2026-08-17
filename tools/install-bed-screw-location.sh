@@ -51,11 +51,8 @@ if start is not None:
 
 active_generated = generated.exists() and "[screws_tilt_adjust]" in generated.read_text(encoding="utf-8")
 if section and not active_generated:
-    generated.write_text(
-        "# Migrated by HDR Performance Bed Screw Location.\n" + section,
-        encoding="utf-8",
-        newline="\n",
-    )
+    with generated.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write("# Migrated by HDR Performance Bed Screw Location.\n" + section)
 
 anchor = "[include KAMP_Settings.cfg]"
 includes = [
@@ -72,7 +69,8 @@ for include in includes:
         anchor = include
 while "\n\n\n" in text:
     text = text.replace("\n\n\n", "\n\n")
-printer.write_text(text, encoding="utf-8", newline="\n")
+with printer.open("w", encoding="utf-8", newline="\n") as handle:
+    handle.write(text)
 PY
 
 download "${RAW_BASE}/tools/klipperscreen-panels/bed_screw_location.py" "${TEMP_DIR}/panel.py"

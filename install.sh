@@ -161,7 +161,7 @@ resolve_host_type() {
       case "${model}" in
         *"Raspberry Pi 4 Model"*) HOST_TYPE="pi4" ;;
         *"Compute Module 4"*) HOST_TYPE="cm4" ;;
-        *"BTT-CB1"*|*"BIGTREETECH CB1"*) HOST_TYPE="cb1" ;;
+        *"BTT-CB1"*|*"BIGTREETECH CB1"*|*"BQ-H616"*) HOST_TYPE="cb1" ;;
         *"BTT Pi"*|*"BTT-PI"*|*"BIGTREETECH Pi"*) HOST_TYPE="btt-pi" ;;
         *) HOST_TYPE="unchanged" ;;
       esac

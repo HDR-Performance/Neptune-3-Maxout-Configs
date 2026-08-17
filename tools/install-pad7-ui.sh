@@ -52,7 +52,17 @@ command -v xinput >/dev/null 2>&1 || die "xinput is required."
 systemctl cat KlipperScreen.service >/dev/null 2>&1 || die "KlipperScreen.service was not found."
 [[ -d "${CONFIG_DIR}" ]] || die "Klipper config directory not found: ${CONFIG_DIR}"
 
-sudo -v
+as_root() {
+  if [[ ${EUID} -eq 0 ]]; then
+    "$@"
+  else
+    sudo "$@"
+  fi
+}
+
+if [[ ${EUID} -ne 0 ]]; then
+  sudo -v
+fi
 
 DISPLAY_CONNECTOR="$(DISPLAY=:0 xrandr --query 2>/dev/null | awk '/ connected primary| connected / {print $1; exit}')"
 TOUCH_NAME="$(DISPLAY=:0 xinput list --name-only 2>/dev/null | grep -Ei 'BTT-HDMI7|touchscreen|touch' | head -n 1 || true)"
@@ -68,7 +78,7 @@ if [[ ! -f "${ROTATOR_SOURCE}" ]]; then
   download "${RAW_BASE}/tools/hdr-pad7-rotate" "${ROTATOR_SOURCE}"
 fi
 
-sudo install -m 0755 "${ROTATOR_SOURCE}" /usr/local/sbin/hdr-pad7-rotate
+as_root install -m 0755 "${ROTATOR_SOURCE}" /usr/local/sbin/hdr-pad7-rotate
 
 # Z Calibrate + Clean is a core Pad 7 control. Install and validate its panel
 # before writing the menu entry so an interrupted or partial OTA update cannot
@@ -86,7 +96,10 @@ if [[ ${ROTATION_ONLY} -eq 0 ]]; then
   if [[ -f "${Z_SETUP_TARGET}" ]]; then
     cp -a "${Z_SETUP_TARGET}" "${Z_SETUP_TARGET}.hdr-backup-${STAMP}"
   fi
-  install -m 0644 "${Z_SETUP_PAYLOAD}" "${Z_SETUP_TARGET}"
+  PANEL_OWNER="$(stat -c '%u' "${KLIPPERSCREEN_DIR}/panels")"
+  PANEL_GROUP="$(stat -c '%g' "${KLIPPERSCREEN_DIR}/panels")"
+  as_root install -o "${PANEL_OWNER}" -g "${PANEL_GROUP}" -m 0644 \
+    "${Z_SETUP_PAYLOAD}" "${Z_SETUP_TARGET}"
   [[ -s "${Z_SETUP_TARGET}" ]] || die "Z Offset Setup panel installation failed: ${Z_SETUP_TARGET}"
 fi
 
@@ -97,7 +110,7 @@ HDR_PAD7_TOUCH="${TOUCH_NAME}"
 HDR_PAD7_LANDSCAPE_TOUCH_OFFSET="${LANDSCAPE_TOUCH_OFFSET}"
 HDR_PAD7_PORTRAIT_TOUCH_OFFSET="${PORTRAIT_TOUCH_OFFSET}"
 EOF
-sudo install -m 0644 "${SETTINGS_TMP}" /etc/default/hdr-pad7-rotation
+as_root install -m 0644 "${SETTINGS_TMP}" /etc/default/hdr-pad7-rotation
 rm -f -- "${SETTINGS_TMP}"
 
 # Older Pad 7 images commonly ship a fixed 90-monitor.conf rotation. Preserve
