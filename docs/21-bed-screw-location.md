@@ -18,8 +18,8 @@ Software cannot tram a bed that has no manual adjusters.
 3. Select an adjuster on the bed map. A saved point is revisited automatically;
    a new point starts at a conservative approximate location.
    **Front** always means the bed edge closest to you while standing in front
-   of the printer. The panel honors KlipperScreen `screw_rotation`, `invert_x`,
-   and `invert_y` settings; Neptune packages default the bed map to 180 degrees.
+   of the printer. Screen rotation and touchscreen calibration do not change
+   the physical bed-coordinate map.
 4. Watch the machine and verify the probe remains over the bed. Use the X/Y
    arrows and select 0.1, 0.5, 1, 5, 10, or 25 mm per press.
 5. Center the **probe** over the physical adjuster and press **Save**. Save
