@@ -193,4 +193,3 @@ These are community modification packages, not official Elegoo, BIGTREETECH, Kli
 ## License
 
 This repository is distributed under the [GNU General Public License v3.0](LICENSE). Third-party projects and bundled components retain their own authorship and license terms.
-

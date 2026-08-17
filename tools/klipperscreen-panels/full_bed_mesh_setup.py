@@ -39,4 +39,3 @@ class Panel(ScreenPanel):
         script = f"G29 BED_TEMP={self.bed.get_value():.0f} NOZZLE_TEMP={self.nozzle.get_value():.0f}"
         self._screen._send_action(widget, "printer.gcode.script", {"script": script})
         self._screen._menu_go_back(home=True)
-

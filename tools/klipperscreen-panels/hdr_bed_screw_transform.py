@@ -32,4 +32,3 @@ def visual_grid_target(limits, column, row, rotation=0, invert_x=False, invert_y
     axis, sign = visual_direction(rotation, invert_x, invert_y, "up")
     target[axis] += vertical * sign * spans[axis]
     return target["X"], target["Y"]
-

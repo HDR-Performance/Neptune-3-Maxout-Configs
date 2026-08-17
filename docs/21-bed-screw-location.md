@@ -54,4 +54,3 @@ The custom panel is installed in KlipperScreen's `panels/` directory, so its
 upstream repository may display **DIRTY**. This is expected for this optional
 panel. A KlipperScreen recovery removes it; rerun the HDR UI installer or OTA
 refresh afterward.
-

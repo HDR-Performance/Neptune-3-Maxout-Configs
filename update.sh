@@ -28,7 +28,8 @@ Usage:
 
 Options:
   --package ID           Override the package recorded by the original installer.
-  --include-printer-cfg  Also replace printer.cfg (advanced; re-check calibration and MCU ID).
+  --include-printer-cfg  Replace printer.cfg after a verified full-config backup (advanced).
+  --replace-printer-cfg  Alias for --include-printer-cfg.
   --pad7-ui MODE         Refresh rotation/touch controls: auto (default), on, or off.
   --pad7-theme MODE      Refresh Maxout theme/sound: auto (default), on, or off.
   --bed-screw-ui MODE    Refresh interactive screw setup: auto, on, or off.
@@ -48,7 +49,7 @@ EOF
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --package) [[ $# -ge 2 ]] || die "--package requires a value"; PACKAGE_ID="$2"; shift 2 ;;
-    --include-printer-cfg) INCLUDE_PRINTER_CFG=1; shift ;;
+    --include-printer-cfg|--replace-printer-cfg) INCLUDE_PRINTER_CFG=1; shift ;;
     --pad7-ui) [[ $# -ge 2 ]] || die "--pad7-ui requires a value"; PAD7_UI_MODE="$2"; shift 2 ;;
     --pad7-theme) [[ $# -ge 2 ]] || die "--pad7-theme requires a value"; PAD7_THEME_MODE="$2"; shift 2 ;;
     --bed-screw-ui) [[ $# -ge 2 ]] || die "--bed-screw-ui requires a value"; BED_SCREW_UI_MODE="$2"; shift 2 ;;
@@ -129,22 +130,53 @@ printf 'Pad 7 rotation/touch: %s; Maxout theme/sound: %s\n' "${PAD7_UI_MODE}" "$
 printf 'Interactive Bed Screw Location UI: %s\n' "${BED_SCREW_UI_MODE}"
 printf 'Moonraker/KAMP: %s; CM4/SKR USB recovery: %s\n' "${MOONRAKER_KAMP_MODE}" "${SKR_USB_MODE}"
 printf 'Moonraker Update Manager registration: %s\n' "${MOONRAKER_UPDATER_MODE}"
+if [[ ${INCLUDE_PRINTER_CFG} -eq 1 ]]; then
+  cat <<'EOF'
+
+KLIPPER PRINTER CONFIG WARNING
+This advanced update replaces printer.cfg with the selected printer/controller
+package. The printer model, controller, driver type, pin assignments, travel
+limits, probe, heaters, fans, and motor configuration must match that package.
+
+The updater will first create and verify a complete backup of the current config
+directory. For SKR packages it retains the current stable /dev/serial/by-id MCU
+path when possible. Saved calibration and local printer.cfg edits may need to be
+restored from the reported backup after the new configuration is reviewed.
+EOF
+fi
 if [[ ${ASSUME_YES} -ne 1 ]]; then
-  printf 'Type UPDATE to continue: '
+  if [[ ${INCLUDE_PRINTER_CFG} -eq 1 ]]; then
+    printf 'Type REPLACE PRINTER.CFG to back up and replace printer.cfg: '
+  else
+    printf 'Type UPDATE to continue: '
+  fi
   read -r answer
-  [[ "${answer}" == UPDATE ]] || die "Update cancelled."
+  if [[ ${INCLUDE_PRINTER_CFG} -eq 1 ]]; then
+    [[ "${answer}" == "REPLACE PRINTER.CFG" ]] || die "Printer configuration replacement cancelled."
+  else
+    [[ "${answer}" == UPDATE ]] || die "Update cancelled."
+  fi
 fi
 
 stamp="$(date +%Y%m%d-%H%M%S)"
 backup="${HOME}/printer_data/config_backups/${stamp}-${PACKAGE_ID}-before-ota-update"
 mkdir -p "${backup}"
-cp -a "${CONFIG_DIR}/custom" "${backup}/" 2>/dev/null || true
-cp -a "${CONFIG_DIR}/KAMP_Settings.cfg" "${backup}/" 2>/dev/null || true
-cp -a "${CONFIG_DIR}/HDR_Documentation" "${backup}/" 2>/dev/null || true
+if [[ ${INCLUDE_PRINTER_CFG} -eq 1 ]]; then
+  cp -a "${CONFIG_DIR}/." "${backup}/"
+  [[ -f "${backup}/printer.cfg" ]] || die "Full backup verification failed: printer.cfg is missing from ${backup}"
+  cmp -s "${CONFIG_DIR}/printer.cfg" "${backup}/printer.cfg" || die "Full backup verification failed: printer.cfg does not match."
+  [[ -n "$(find "${backup}" -mindepth 1 -maxdepth 1 -print -quit)" ]] || die "Full backup verification failed: backup is empty."
+  printf 'Verified full configuration backup: %s\n' "${backup}"
+else
+  cp -a "${CONFIG_DIR}/custom" "${backup}/" 2>/dev/null || true
+  cp -a "${CONFIG_DIR}/KAMP_Settings.cfg" "${backup}/" 2>/dev/null || true
+  cp -a "${CONFIG_DIR}/HDR_Documentation" "${backup}/" 2>/dev/null || true
+  cp -a "${CONFIG_DIR}/printer.cfg" "${backup}/printer.cfg"
+  cmp -s "${CONFIG_DIR}/printer.cfg" "${backup}/printer.cfg" || die "printer.cfg backup verification failed."
+fi
 mkdir -p "${temp_dir}/preserved-custom"
 cp -a "${CONFIG_DIR}/custom/generated" "${temp_dir}/preserved-custom/" 2>/dev/null || true
 cp -a "${CONFIG_DIR}/custom/state" "${temp_dir}/preserved-custom/" 2>/dev/null || true
-[[ ${INCLUDE_PRINTER_CFG} -eq 0 ]] || cp -a "${CONFIG_DIR}/printer.cfg" "${backup}/"
 
 rm -rf -- "${CONFIG_DIR}/custom" "${CONFIG_DIR}/HDR_Documentation"
 cp -a "${source_config}/custom" "${CONFIG_DIR}/custom"
@@ -167,6 +199,7 @@ cat >"${CONFIG_DIR}/.hdr-performance-update" <<EOF
 package_id=${PACKAGE_ID}
 updated_at=${stamp}
 included_printer_cfg=${INCLUDE_PRINTER_CFG}
+backup_verified=1
 backup_dir=${backup}
 EOF
 
@@ -293,6 +326,16 @@ run_moonraker_updater_registration() {
   HDR_CONFIG_DIR="${CONFIG_DIR}" "${installer}"
 }
 
+run_speed_profile_update() {
+  local marker_tool="${temp_dir}/prepare-speed-profile-config.py"
+  local installer="${temp_dir}/install-speed-profile-service.sh"
+  download "${RAW_BASE}/tools/prepare-speed-profile-config.py" "${marker_tool}"
+  download "${RAW_BASE}/tools/install-speed-profile-service.sh" "${installer}"
+  python3 "${marker_tool}" "${CONFIG_DIR}/printer.cfg"
+  chmod +x "${installer}"
+  HDR_CONFIG_DIR="${CONFIG_DIR}" HDR_RAW_BASE="${RAW_BASE}" "${installer}"
+}
+
 if ! run_pad7_ui_update; then
   [[ "${PAD7_UI_MODE}" != on ]] || die "Required Pad 7 rotation/touch refresh failed."
   printf 'WARNING: Package files updated, but the optional Pad 7 rotation/touch refresh failed.\n' >&2
@@ -317,6 +360,19 @@ if ! run_moonraker_updater_registration; then
   [[ "${MOONRAKER_UPDATER_MODE}" != on ]] || die "Required Moonraker updater registration failed."
   printf 'WARNING: Package files updated, but Update Manager registration failed or rolled back.\n' >&2
 fi
+if ! run_speed_profile_update; then
+  die "Persistent speed-profile installation failed; the verified printer.cfg backup is at ${backup}."
+fi
 
 printf 'OTA update staged successfully. Backup: %s\n' "${backup}"
 printf 'Review the files in Mainsail, then issue RESTART when ready.\n'
+cat <<'EOF'
+
+POST-UPDATE SAFETY CHECK REQUIRED
+  1. Run POST_OTA_VERIFY from Macros > Maintenance & Setup.
+  2. Run More > Z Calibrate + Clean and verify the saved Z offset.
+  3. Confirm the reported input-shaper X/Y types and frequencies match this printer.
+  4. Home and perform a controlled low-speed motion test before starting a print.
+Do not assume calibration values survived a printer.cfg replacement; restore
+known-good values from the verified backup when necessary.
+EOF

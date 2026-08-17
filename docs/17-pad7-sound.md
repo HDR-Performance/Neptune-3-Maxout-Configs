@@ -95,4 +95,3 @@ The installer creates these recoverable backups before editing:
 Restore the newest `KlippyGtk.py` backup and restart KlipperScreen if a later upstream KlipperScreen update changes its button factory. Re-run this installer after KlipperScreen updates to restore the theme sound hook against the new source.
 
 Return to the [documentation index](README.md).
-

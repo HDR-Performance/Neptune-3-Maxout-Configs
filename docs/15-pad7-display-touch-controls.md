@@ -69,7 +69,7 @@ chmod +x install-pad7-ui.sh
 ./install-pad7-ui.sh
 ```
 
-If you want only rotationâ€”without the Maxout macro/menu additionsâ€”use the dedicated [standalone rotation installer](19-pad7-rotation-only.md).
+If you want only rotation—without the Maxout macro/menu additions—use the dedicated [standalone rotation installer](19-pad7-rotation-only.md).
 
 The implementation is published for review:
 

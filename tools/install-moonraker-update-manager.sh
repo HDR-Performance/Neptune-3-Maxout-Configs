@@ -127,4 +127,3 @@ printf 'Registered Neptune-Maxout-Configs in Moonraker Update Manager.\n'
 printf 'Repository: %s\n' "${REPO_DIR}"
 printf 'Moonraker backup: %s\n' "${MOONRAKER_BACKUP}"
 printf 'Package update watcher: %s\n' "${WATCH_PATH}"
-
