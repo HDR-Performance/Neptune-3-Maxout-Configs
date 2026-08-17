@@ -1,0 +1,34 @@
+name: Rebuild installer packages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "package-overlays/**"
+      - "tools/rebuild-release-zips.py"
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Rebuild archives and checksums
+        run: python tools/rebuild-release-zips.py
+      - name: Commit refreshed packages
+        run: |
+          if git diff --quiet -- '*.zip' SHA256SUMS; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- '*.zip' SHA256SUMS
+          git commit -m "Refresh installer packages"
+          git push
+
