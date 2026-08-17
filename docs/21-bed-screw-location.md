@@ -17,6 +17,9 @@ Software cannot tram a bed that has no manual adjusters.
 2. Confirm the printer has physical adjusters and choose 4, 5, or 6.
 3. Select an adjuster on the bed map. A saved point is revisited automatically;
    a new point starts at a conservative approximate location.
+   **Front** always means the bed edge closest to you while standing in front
+   of the printer. The panel honors KlipperScreen `screw_rotation`, `invert_x`,
+   and `invert_y` settings; Neptune packages default the bed map to 180 degrees.
 4. Watch the machine and verify the probe remains over the bed. Use the X/Y
    arrows and select 0.1, 0.5, 1, 5, 10, or 25 mm per press.
 5. Center the **probe** over the physical adjuster and press **Save**. Save
@@ -31,6 +34,8 @@ Software cannot tram a bed that has no manual adjusters.
 The coordinates persist in both the generated Klipper file and
 `custom/state/bed_screw_locations.json`. HDR OTA updates preserve both folders.
 Reopen Bed Screw Location whenever an adjuster or probe position changes.
+Locations saved by the original mirrored-map release are intentionally ignored
+after this correction, so each screw must be taught once with the corrected map.
 
 ## Update Manager note
 
@@ -38,3 +43,4 @@ The custom panel is installed in KlipperScreen's `panels/` directory, so its
 upstream repository may display **DIRTY**. This is expected for this optional
 panel. A KlipperScreen recovery removes it; rerun the HDR UI installer or OTA
 refresh afterward.
+
