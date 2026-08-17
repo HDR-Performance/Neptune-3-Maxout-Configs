@@ -337,7 +337,9 @@ run_speed_profile_update() {
 }
 
 if ! run_pad7_ui_update; then
-  [[ "${PAD7_UI_MODE}" != on ]] || die "Required Pad 7 rotation/touch refresh failed."
+  if [[ "${PAD7_UI_MODE}" == on ]] || { [[ "${PAD7_UI_MODE}" == auto ]] && pad7_detected; }; then
+    die "Pad 7 UI refresh failed; the update did not report success with incomplete controls."
+  fi
   printf 'WARNING: Package files updated, but the optional Pad 7 rotation/touch refresh failed.\n' >&2
 fi
 if ! run_pad7_theme_update; then
@@ -376,3 +378,4 @@ POST-UPDATE SAFETY CHECK REQUIRED
 Do not assume calibration values survived a printer.cfg replacement; restore
 known-good values from the verified backup when necessary.
 EOF
+
