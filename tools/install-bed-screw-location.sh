@@ -9,6 +9,8 @@ KS_DIR="${HDR_KLIPPERSCREEN_DIR:-${HOME}/KlipperScreen}"
 KS_CONFIG="${CONFIG_DIR}/KlipperScreen.conf"
 PANEL_TARGET="${KS_DIR}/panels/bed_screw_location.py"
 TRANSFORM_TARGET="${KS_DIR}/panels/hdr_bed_screw_transform.py"
+Z_SETUP_TARGET="${KS_DIR}/panels/z_offset_setup.py"
+MESH_SETUP_TARGET="${KS_DIR}/panels/full_bed_mesh_setup.py"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 TEMP_DIR="$(mktemp -d -t hdr-bed-screw-ui.XXXXXX)"
 trap 'rm -rf -- "${TEMP_DIR}"' EXIT
@@ -76,9 +78,16 @@ PY
 
 download "${RAW_BASE}/tools/klipperscreen-panels/bed_screw_location.py" "${TEMP_DIR}/panel.py"
 download "${RAW_BASE}/tools/klipperscreen-panels/hdr_bed_screw_transform.py" "${TEMP_DIR}/transform.py"
+download "${RAW_BASE}/tools/klipperscreen-panels/z_offset_setup.py" "${TEMP_DIR}/z-offset-setup.py"
+download "${RAW_BASE}/tools/klipperscreen-panels/full_bed_mesh_setup.py" "${TEMP_DIR}/full-bed-mesh-setup.py"
 sed "s|__HDR_CONFIG_DIR__|${CONFIG_DIR//|/\\|}|g" "${TEMP_DIR}/panel.py" >"${TEMP_DIR}/panel-rendered.py"
+if grep -q '__HDR_CONFIG_DIR__' "${TEMP_DIR}/panel-rendered.py"; then
+  die "The Bed Screw Location panel still contains an unresolved config-path placeholder."
+fi
 python3 -m py_compile "${TEMP_DIR}/panel-rendered.py" || die "The Bed Screw Location panel failed Python validation."
 python3 -m py_compile "${TEMP_DIR}/transform.py" || die "The Bed Screw Location orientation helper failed Python validation."
+python3 -m py_compile "${TEMP_DIR}/z-offset-setup.py" || die "The Z Offset Setup panel failed Python validation."
+python3 -m py_compile "${TEMP_DIR}/full-bed-mesh-setup.py" || die "The Full Bed Mesh panel failed Python validation."
 
 if [[ -f "${PANEL_TARGET}" ]]; then
   cp -a "${PANEL_TARGET}" "${PANEL_TARGET}.hdr-backup-${STAMP}"
@@ -88,6 +97,14 @@ if [[ -f "${TRANSFORM_TARGET}" ]]; then
   cp -a "${TRANSFORM_TARGET}" "${TRANSFORM_TARGET}.hdr-backup-${STAMP}"
 fi
 install -m 0644 "${TEMP_DIR}/transform.py" "${TRANSFORM_TARGET}"
+for pair in "${TEMP_DIR}/z-offset-setup.py:${Z_SETUP_TARGET}" "${TEMP_DIR}/full-bed-mesh-setup.py:${MESH_SETUP_TARGET}"; do
+  source="${pair%%:*}"
+  target="${pair#*:}"
+  if [[ -f "${target}" ]]; then
+    cp -a "${target}" "${target}.hdr-backup-${STAMP}"
+  fi
+  install -m 0644 "${source}" "${target}"
+done
 
 if [[ ! -f "${CONFIG_DIR}/custom/generated/screws_tilt_adjust.cfg" ]]; then
   cat >"${CONFIG_DIR}/custom/generated/screws_tilt_adjust.cfg" <<'EOF'
