@@ -11,6 +11,7 @@ MCU_ID=""
 HOST_TYPE="auto"
 PAD7_UI_MODE="${HDR_PAD7_UI:-auto}"
 PAD7_THEME_MODE="${HDR_PAD7_THEME:-auto}"
+BED_SCREW_UI_MODE="${HDR_BED_SCREW_UI:-auto}"
 SKR_USB_MODE="${HDR_SKR_USB_RECOVERY:-auto}"
 MOONRAKER_KAMP_MODE="${HDR_MOONRAKER_KAMP:-auto}"
 MOONRAKER_UPDATER_MODE="${HDR_MOONRAKER_UPDATER:-auto}"
@@ -47,9 +48,10 @@ Usage:
 Options:
   --package ID       Skip the menu and select a package ID.
   --mcu-id PATH      SKR only: replace the MCU placeholder with this exact path.
-  --host TYPE        Klipper host: auto (default), cb1, cm4, or pi4.
+  --host TYPE        Klipper host: auto, cb1, cm4, pi4, or btt-pi.
   --pad7-ui MODE     Pad 7 controls: auto (default), on, or off.
   --pad7-theme MODE  Neptune Maxout theme: auto (default), on, or off.
+  --bed-screw-ui MODE  Interactive KlipperScreen screw setup: auto, on, or off.
   --skr-usb MODE      SKR USB recovery: auto (CM4 default), on, or off.
   --moonraker-kamp MODE  KAMP Moonraker preflight: auto (default), on, or off.
   --moonraker-updater MODE  Register Maxout updater: auto (default), on, or off.
@@ -73,14 +75,14 @@ EOF
 
 list_packages() {
   cat <<'EOF'
-1) neptune3-robin       - Neptune 3 / stock Robin Nano / Pad 7 or Raspberry Pi 4
-2) neptune3pro-robin    - Neptune 3 Pro / stock Robin Nano / Pad 7 or Raspberry Pi 4
-3) neptune3plus-robin   - Neptune 3 Plus / stock Robin Nano / Pad 7 or Raspberry Pi 4
-4) neptune3max-robin    - Neptune 3 Max / stock Robin Nano / Pad 7 or Raspberry Pi 4
-5) neptune3-skr3ez      - Neptune 3 / SKR 3 EZ / TMC5160 Pro / Pad 7 or Raspberry Pi 4
-6) neptune3pro-skr3ez   - Neptune 3 Pro / SKR 3 EZ / TMC5160 Pro / Pad 7 or Raspberry Pi 4
-7) neptune3plus-skr3ez  - Neptune 3 Plus / SKR 3 EZ / TMC5160 Pro / Pad 7 or Raspberry Pi 4
-8) neptune3max-skr3ez   - Neptune 3 Max / SKR 3 EZ / TMC5160 Pro / Pad 7 or Raspberry Pi 4
+1) neptune3-robin       - Neptune 3 / stock Robin Nano / supported Klipper host
+2) neptune3pro-robin    - Neptune 3 Pro / stock Robin Nano / supported Klipper host
+3) neptune3plus-robin   - Neptune 3 Plus / stock Robin Nano / supported Klipper host
+4) neptune3max-robin    - Neptune 3 Max / stock Robin Nano / supported Klipper host
+5) neptune3-skr3ez      - Neptune 3 / SKR 3 EZ / TMC5160 Pro / supported host
+6) neptune3pro-skr3ez   - Neptune 3 Pro / SKR 3 EZ / TMC5160 Pro / supported host
+7) neptune3plus-skr3ez  - Neptune 3 Plus / SKR 3 EZ / TMC5160 Pro / supported host
+8) neptune3max-skr3ez   - Neptune 3 Max / SKR 3 EZ / TMC5160 Pro / supported host
 EOF
 }
 
@@ -160,11 +162,12 @@ resolve_host_type() {
         *"Raspberry Pi 4 Model"*) HOST_TYPE="pi4" ;;
         *"Compute Module 4"*) HOST_TYPE="cm4" ;;
         *"BTT-CB1"*|*"BIGTREETECH CB1"*) HOST_TYPE="cb1" ;;
+        *"BTT Pi"*|*"BTT-PI"*|*"BIGTREETECH Pi"*) HOST_TYPE="btt-pi" ;;
         *) HOST_TYPE="unchanged" ;;
       esac
       ;;
-    cb1|cm4|pi4) ;;
-    *) die "--host must be auto, cb1, cm4, or pi4." ;;
+    cb1|cm4|pi4|btt-pi) ;;
+    *) die "--host must be auto, cb1, cm4, pi4, or btt-pi." ;;
   esac
 }
 
@@ -182,8 +185,8 @@ adapt_host_config() {
     grep -q 'cs_pin: CM4:None' "${printer_cfg}" || die "CM4 adaptation could not set the ADXL chip select."
     grep -q 'spi_bus: spidev0.1' "${printer_cfg}" || die "CM4 adaptation could not set the ADXL SPI bus."
     info "Adapted Pad 7 input shaping for Raspberry Pi CM4"
-  elif [[ "${HOST_TYPE}" == "pi4" ]]; then
-    local pi4_cfg="${printer_cfg}.pi4"
+  elif [[ "${HOST_TYPE}" == "pi4" || "${HOST_TYPE}" == "btt-pi" ]]; then
+    local generic_cfg="${printer_cfg}.${HOST_TYPE}"
     awk '
       /^\[(mcu (CB1|CM4)|adxl345|resonance_tester)\]([[:space:]]*(#.*)?)?$/ {
         skip=1
@@ -191,22 +194,27 @@ adapt_host_config() {
       }
       skip && /^\[/ {skip=0}
       !skip {print}
-    ' "${printer_cfg}" >"${pi4_cfg}"
-    mv "${pi4_cfg}" "${printer_cfg}"
+    ' "${printer_cfg}" >"${generic_cfg}"
+    mv "${generic_cfg}" "${printer_cfg}"
+    sed -i '/^\[include custom\/macros\/calibrate_shaper\.cfg\]$/d' "${printer_cfg}"
+    rm -f -- "$(dirname "${printer_cfg}")/custom/macros/calibrate_shaper.cfg"
     cat >>"${printer_cfg}" <<'EOF'
 
-# HDR Raspberry Pi 4 host mode:
+# HDR generic Klipper-host mode (Raspberry Pi 4 or BTT Pi V1.2):
 # Pad 7 host-MCU and built-in ADXL345 sections were intentionally removed.
 # The printer runs with saved input-shaper values. Configure and test a separately
 # wired accelerometer before using SHAPER_CALIBRATE; see docs/18-raspberry-pi4-ssh-install.md.
 EOF
     if grep -Eq '^\[(mcu (CB1|CM4)|adxl345|resonance_tester)\]' "${printer_cfg}"; then
-      die "Raspberry Pi 4 adaptation could not remove the Pad 7-only host sections."
+      die "Generic host adaptation could not remove the Pad 7-only host sections."
     fi
-    info "Adapted the package for a Raspberry Pi 4 without Pad 7-only MCU/ADXL hardware"
+    if grep -q '^\[include custom/macros/calibrate_shaper\.cfg\]$' "${printer_cfg}"; then
+      die "Generic host adaptation could not disable the unavailable ADXL calibration macro."
+    fi
+    info "Adapted the package for ${HOST_TYPE} without Pad 7-only MCU/ADXL hardware"
   elif [[ "${HOST_TYPE}" == "unchanged" ]]; then
     printf 'WARNING: Pad host was not recognized; host-MCU/ADXL settings were left unchanged.\n' >&2
-    printf 'Use --host cb1, --host cm4, or --host pi4 when the host type is known.\n' >&2
+    printf 'Use --host cb1, --host cm4, --host pi4, or --host btt-pi when known.\n' >&2
   fi
 }
 
@@ -348,6 +356,21 @@ install_pad7_theme() {
   fi
 }
 
+install_bed_screw_ui() {
+  local installer="${TEMP_DIR}/install-bed-screw-location.sh"
+  case "${BED_SCREW_UI_MODE}" in
+    off) info "Interactive Bed Screw Location UI disabled"; return 0 ;;
+    auto)
+      [[ -d "${HOME}/KlipperScreen/panels" ]] || { info "KlipperScreen not detected; Bed Screw Location UI skipped"; return 0; }
+      ;;
+    on) [[ -d "${HOME}/KlipperScreen/panels" ]] || die "KlipperScreen panels directory is missing." ;;
+  esac
+  info "Installing universal Bed Screw Location panel"
+  download_file "${RAW_BASE}/tools/install-bed-screw-location.sh" "${installer}"
+  chmod +x "${installer}"
+  HDR_CONFIG_DIR="${CONFIG_DIR}" HDR_RAW_BASE="${RAW_BASE}" "${installer}"
+}
+
 install_skr_usb_recovery() {
   local usb_installer="${TEMP_DIR}/install-skr-usb-recovery.sh"
   [[ "${CONTROLLER}" == "skr" ]] || return 0
@@ -434,6 +457,7 @@ while [[ $# -gt 0 ]]; do
     --host) [[ $# -ge 2 ]] || die "--host requires a value."; HOST_TYPE="$2"; shift 2 ;;
     --pad7-ui) [[ $# -ge 2 ]] || die "--pad7-ui requires a value."; PAD7_UI_MODE="$2"; shift 2 ;;
     --pad7-theme) [[ $# -ge 2 ]] || die "--pad7-theme requires a value."; PAD7_THEME_MODE="$2"; shift 2 ;;
+    --bed-screw-ui) [[ $# -ge 2 ]] || die "--bed-screw-ui requires a value."; BED_SCREW_UI_MODE="$2"; shift 2 ;;
     --skr-usb) [[ $# -ge 2 ]] || die "--skr-usb requires a value."; SKR_USB_MODE="$2"; shift 2 ;;
     --moonraker-kamp) [[ $# -ge 2 ]] || die "--moonraker-kamp requires a value."; MOONRAKER_KAMP_MODE="$2"; shift 2 ;;
     --moonraker-updater) [[ $# -ge 2 ]] || die "--moonraker-updater requires a value."; MOONRAKER_UPDATER_MODE="$2"; shift 2 ;;
@@ -451,8 +475,20 @@ validate_config_dir
 [[ -n "${PACKAGE_ID}" ]] || select_package
 resolve_package
 resolve_host_type
+if [[ "${HOST_TYPE}" == "btt-pi" ]]; then
+  case "${MOONRAKER_UPDATER_MODE}" in
+    auto)
+      MOONRAKER_UPDATER_MODE="off"
+      info "BTT Pi V1.2 is manual SSH-install only; OTA registration disabled"
+      ;;
+    on)
+      die "BTT Pi V1.2 OTA is not supported yet. Use --moonraker-updater off."
+      ;;
+  esac
+fi
 case "${PAD7_UI_MODE}" in auto|on|off) ;; *) die "--pad7-ui must be auto, on, or off." ;; esac
 case "${PAD7_THEME_MODE}" in auto|on|off) ;; *) die "--pad7-theme must be auto, on, or off." ;; esac
+case "${BED_SCREW_UI_MODE}" in auto|on|off) ;; *) die "--bed-screw-ui must be auto, on, or off." ;; esac
 case "${SKR_USB_MODE}" in auto|on|off) ;; *) die "--skr-usb must be auto, on, or off." ;; esac
 case "${MOONRAKER_KAMP_MODE}" in auto|on|off) ;; *) die "--moonraker-kamp must be auto, on, or off." ;; esac
 case "${MOONRAKER_UPDATER_MODE}" in auto|on|off) ;; *) die "--moonraker-updater must be auto, on, or off." ;; esac
@@ -464,6 +500,7 @@ printf 'Source:     %s/%s\n' "${RAW_BASE}" "${ZIP_NAME}"
 printf 'Host:       %s\n' "${HOST_TYPE}"
 printf 'Pad 7 UI:   %s\n' "${PAD7_UI_MODE}"
 printf 'Pad 7 theme:%s\n' " ${PAD7_THEME_MODE}"
+printf 'Bed screw UI:%s\n' " ${BED_SCREW_UI_MODE}"
 printf 'SKR USB:    %s\n' "${SKR_USB_MODE}"
 printf 'KAMP/Moonraker: %s\n' "${MOONRAKER_KAMP_MODE}"
 printf 'Moonraker updater: %s\n' "${MOONRAKER_UPDATER_MODE}"
@@ -581,6 +618,7 @@ source=${RAW_BASE}/${ZIP_NAME}
 pad_host=${HOST_TYPE}
 pad7_ui=${PAD7_UI_MODE}
 pad7_theme=${PAD7_THEME_MODE}
+bed_screw_ui=${BED_SCREW_UI_MODE}
 EOF
 
 info "Installation files copied successfully"
@@ -594,6 +632,7 @@ fi
 
 install_pad7_ui
 install_pad7_theme
+install_bed_screw_ui
 install_skr_usb_recovery
 configure_moonraker_kamp
 install_moonraker_updater
@@ -618,4 +657,3 @@ printf '  5. On a Pad 7, use More > Screen Rotation for the four fixed orientati
 printf '  6. The Neptune Maxout theme can be changed from KlipperScreen Settings.\n'
 printf '\nRestore command if needed:\n'
 printf '  bash "%s" "%s"\n' "${RESTORE_SCRIPT}" "${BACKUP_DIR}"
-

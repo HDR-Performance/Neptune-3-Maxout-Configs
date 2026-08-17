@@ -6,8 +6,8 @@ Klipper upgrade packages for the Elegoo Neptune 3, Neptune 3 Pro, Neptune 3 Plus
 
 This repository consolidates the working packages and guides previously spread across:
 
-- [Neptune Maxout â€” SKR 3 EZ with TMC5160 Pro drivers](https://github.com/HDR-Performance/Neptune-Maxout-SKR-3-EZ-with-TMC5160-Pro-Drivers)
-- [Neptune 3 Max â€” BIGTREETECH Pad 7](https://github.com/HDR-Performance/Neptune-3-Max-bigtreetech-pad-7-)
+- [Neptune Maxout — SKR 3 EZ with TMC5160 Pro drivers](https://github.com/HDR-Performance/Neptune-Maxout-SKR-3-EZ-with-TMC5160-Pro-Drivers)
+- [Neptune 3 Max — BIGTREETECH Pad 7](https://github.com/HDR-Performance/Neptune-3-Max-bigtreetech-pad-7-)
 
 The older wiring, firmware, KAMP, slicer, Moonraker, troubleshooting, and motor-upgrade information has been preserved where useful and corrected where board limits or current Klipper behavior required it.
 
@@ -22,6 +22,7 @@ The legacy tutorials have been rebuilt as a structured, corrected documentation 
 - **[Install directly from GitHub over SSH](docs/12-ssh-installer.md)**
 - **[Set up a Raspberry Pi 4 or generic CM4 host](docs/13-raspberry-pi4-cm4-klipper-host.md)**
 - **[Install on a normal Raspberry Pi 4 over SSH](docs/18-raspberry-pi4-ssh-install.md)**
+- **[Install on a BTT Pi V1.2 with a standard HDMI screen](docs/20-btt-pi-v12-standard-display.md)**
 - **[Set up a Pad 7 CM4, motor controls, and screen rotation](docs/14-pad7-cm4-klipperscreen.md)**
 - **[Set up tested Pad 7 CB1/CM4 display and touchscreen controls](docs/15-pad7-display-touch-controls.md)**
 - **[Install the Neptune Maxout KlipperScreen theme](docs/16-neptune-maxout-klipperscreen-theme.md)**
@@ -72,6 +73,22 @@ chmod +x install-pad7-rotation.sh
 
 This does not install or replace printer configuration, KAMP, macros, themes, or audio. See the [standalone rotation guide](docs/19-pad7-rotation-only.md).
 
+### Neptune 3 Pro + BTT Pi V1.2 installer
+
+The initial BTT Pi V1.2 release is intentionally a manual SSH installer without
+OTA registration:
+
+```text
+cd ~
+curl -fsSL https://raw.githubusercontent.com/HDR-Performance/Neptune-3-Maxout-Configs/main/install-btt-pi-neptune3pro.sh -o install-btt-pi-neptune3pro.sh
+less install-btt-pi-neptune3pro.sh
+chmod +x install-btt-pi-neptune3pro.sh
+./install-btt-pi-neptune3pro.sh
+```
+
+This dedicated wrapper is only for a Neptune 3 Pro retaining its Robin Nano
+controller. See the [BTT Pi V1.2 guide](docs/20-btt-pi-v12-standard-display.md).
+
 ## Choose the controller family
 
 ### Stock Robin Nano + BTT Pad 7
@@ -85,14 +102,14 @@ These packages retain each model's supplied working Robin Nano hardware mapping 
 | Neptune 3 Plus | [Robin Nano package](Neptune3Plus-HDR-Performance-Pad7-Complete-Guide.zip) |
 | Neptune 3 Max | [Robin Nano package](Neptune3Max-HDR-Performance-Pad7-Complete-Guide.zip) |
 
-### HDR Maxout â€” SKR 3 EZ + TMC5160 Pro EZ + BTT Pad 7
+### HDR Maxout — SKR 3 EZ + TMC5160 Pro EZ + BTT Pad 7
 
-These are full controller-conversion packages. The common baseline is four TMC5160 Pro EZ drivers, a 42Ã—60 mm / 2.1 A Y motor, the original Y motor moved to X, both Z motors on one driver, and BTT Pad 7 input shaping.
+These are full controller-conversion packages. The common baseline is four TMC5160 Pro EZ drivers, a 42×60 mm / 2.1 A Y motor, the original Y motor moved to X, both Z motors on one driver, and BTT Pad 7 input shaping.
 
 | Printer | Download | Status and important difference |
 |---|---|---|
 | Neptune 3 | [SKR Maxout package](Neptune3-SKR3EZ-TMC5160Pro-HDR-Performance.zip) | Engineering conversion; stock strain-gauge interface must be electrically verified at PC13 |
-| Neptune 3 Pro | [SKR Maxout package](Neptune3Pro-SKR3EZ-TMC5160Pro-HDR-Performance.zip) | Pro geometry, inductive probe through PC0, stock-hotend 250 Â°C limit |
+| Neptune 3 Pro | [SKR Maxout package](Neptune3Pro-SKR3EZ-TMC5160Pro-HDR-Performance.zip) | Pro geometry, inductive probe through PC0, stock-hotend 250 °C limit |
 | Neptune 3 Plus | [SKR Maxout package](Neptune3Plus-SKR3EZ-TMC5160Pro-HDR-Performance.zip) | Plus geometry; verify bed current and use an external MOSFET when required |
 | Neptune 3 Max | [SKR Maxout package](Neptune3Max-SKR3EZ-TMC5160Pro-HDR-Performance.zip) | Consolidated working Max build; 0.4 mm CHT/FlowTech baseline and Max geometry |
 
@@ -111,8 +128,16 @@ Every ZIP contains `START_HERE.md`, a model-specific installation sequence, wiri
 - Maintenance counters and guided PID tuning
 - Model-specific homing, mesh, motion envelope, and screw locations
 - Organized `custom/kamp`, `custom/macros`, and `custom/state` directories
+- Each formerly inline `printer.cfg` macro stored in its own clearly named file
+- Standalone BTT Pi V1.2 host mode without Pad 7 MCU/ADXL/display assumptions
 - Automatic Pad 7 CB1/CM4 screen rotation with the tested matching touchscreen matrix
 - Neptune Maxout Pad 7 theme with branded background, red/charcoal controls, a printer badge, and original retro laser button feedback on CM4 or CB1; the CM4 installer includes the hardware-tested PipeWire/WirePlumber HDMI0 fix
+
+> [!WARNING]
+> The Maxout Normal, Fast, and Ludicrous speed-profile macros are a work in
+> progress for controlled testing. They are not validated production limits for
+> every printer. High-speed modes require suitable motors, drivers, wiring,
+> mechanics, slicer settings, and careful step-by-step testing.
 
 ## Corrected SKR 3 EZ details
 
@@ -140,6 +165,7 @@ Every ZIP contains `START_HERE.md`, a model-specific installation sequence, wiri
 |---|---|
 | `MANUAL_Z_OFFSET_ADJUST` | Clean the nozzle and open Klipper's TESTZ calibration controls |
 | `MANUAL_BED_TRAMMING` | Probe verified screw locations on supported models |
+| `BED_SCREW_LOCATION` | Open the universal KlipperScreen map to teach 4-6 physical adjuster locations |
 | `ENABLE_HEAT_SOAK` / `DISABLE_HEAT_SOAK` | Persistently enable or disable the pre-KAMP soak |
 | `SET_MATERIAL MATERIAL=PETG` | Select a persistent material pressure-advance profile |
 | `LOAD_FILAMENT` / `UNLOAD_FILAMENT` | Guided filament handling |
@@ -166,4 +192,3 @@ These are community modification packages, not official Elegoo, BIGTREETECH, Kli
 ## License
 
 This repository is distributed under the [GNU General Public License v3.0](LICENSE). Third-party projects and bundled components retain their own authorship and license terms.
-
