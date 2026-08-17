@@ -36,6 +36,9 @@ The coordinates persist in both the generated Klipper file and
 Reopen Bed Screw Location whenever an adjuster or probe position changes.
 Locations saved by the original mirrored-map release are intentionally ignored
 after this correction, so each screw must be taught once with the corrected map.
+Model defaults are imported by their physical names (for example, `left front
+screw`), not by `screw1`/`screw2` order, so each map button retains its correct
+physical target.
 
 ## Update Manager note
 
