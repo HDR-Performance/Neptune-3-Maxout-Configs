@@ -34,11 +34,19 @@ Software cannot tram a bed that has no manual adjusters.
 The coordinates persist in both the generated Klipper file and
 `custom/state/bed_screw_locations.json`. HDR OTA updates preserve both folders.
 Reopen Bed Screw Location whenever an adjuster or probe position changes.
-Locations saved by the original mirrored-map release are intentionally ignored
-after this correction, so each screw must be taught once with the corrected map.
-Model defaults are imported by their physical names (for example, `left front
-screw`), not by `screw1`/`screw2` order, so each map button retains its correct
-physical target.
+Locations saved by an earlier mirrored-map release are intentionally ignored
+after this correction. Package screw names and coordinates already use the
+operator/front viewpoint, so they are assigned directly to the matching map
+buttons without rotation. Display and touchscreen orientation do not alter the
+physical bed map. **Front** means the bed edge closest to the person standing
+in front of the printer. The installer recognizes the short-lived schema-5
+mirrored file and corrects it once while importing; schema 6, schema 7, and
+newer files are never rotated.
+
+The panel deliberately ignores KlipperScreen `screw_rotation`, `invert_x`, and
+`invert_y` for machine movement. Those settings may affect other screens, but
+Bed Screw Location always uses the operator/front viewpoint: high X is right
+and low Y is front.
 
 ## Update Manager note
 
