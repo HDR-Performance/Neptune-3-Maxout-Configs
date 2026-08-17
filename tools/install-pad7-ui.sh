@@ -187,12 +187,6 @@ icon: z-farther
 panel: z_offset_setup
 enable: {{ 'MANUAL_Z_OFFSET_ADJUST' in printer.gcode_macros.list }}
 
-[menu __main more hdr_full_bed_mesh]
-name: Full Bed Mesh
-icon: bed-level
-panel: full_bed_mesh_setup
-enable: {{ 'G29' in printer.gcode_macros.list }}
-
 [menu __main more hdr_rotation]
 name: Screen Rotation
 icon: settings
@@ -314,3 +308,4 @@ if [[ ${ROTATION_ONLY} -eq 0 ]]; then
   printf 'Motor release: Move > Disable Motors (the motor-off icon beside Home).\n'
   printf 'After releasing motors, home again before any controlled move.\n'
 fi
+
