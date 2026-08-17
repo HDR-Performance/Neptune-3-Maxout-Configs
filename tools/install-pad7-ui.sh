@@ -323,6 +323,7 @@ else
 fi
 
 sudo systemctl restart moonraker.service
+sudo systemctl restart KlipperScreen.service
 
 printf '\nHDR Performance Pad 7 controls installed.\n'
 printf 'Display: %s\nTouchscreen: %s\n' "${DISPLAY_CONNECTOR}" "${TOUCH_NAME}"
