@@ -103,12 +103,25 @@ class Panel(ScreenPanel):
             return
         self.count = physical_count
         points_by_name = {point["name"]: point for point in named_points}
+        schema_match = re.search(r"(?m)^#\s*schema_version:\s*(\d+)\s*$", text)
+        generated_schema = int(schema_match.group(1)) if schema_match else 0
+        v5_migration = {
+            "Front Left": "Rear Right",
+            "Middle Left": "Middle Right",
+            "Rear Left": "Front Right",
+            "Rear Right": "Front Left",
+            "Middle Right": "Middle Left",
+            "Front Right": "Rear Left",
+            "Center": "Center",
+        }
         mapped = {}
         # Package screw names already use the operator/front viewpoint. Keep
         # each named coordinate attached to the same visual label; display and
-        # touch rotation must never alter the physical bed map.
+        # touch rotation must never alter the physical bed map. Schema 5 was a
+        # short-lived mirrored release, so migrate only that exact schema.
         for key, _column, _row, visual_label in self.slot_layout():
-            source = points_by_name.get(visual_label)
+            source_label = v5_migration[visual_label] if generated_schema == 5 else visual_label
+            source = points_by_name.get(source_label)
             if source is None:
                 return
             mapped[key] = {"x": source["x"], "y": source["y"]}
