@@ -8,6 +8,7 @@ CONFIG_DIR="${HDR_CONFIG_DIR:-${HOME}/printer_data/config}"
 KS_DIR="${HDR_KLIPPERSCREEN_DIR:-${HOME}/KlipperScreen}"
 KS_CONFIG="${CONFIG_DIR}/KlipperScreen.conf"
 PANEL_TARGET="${KS_DIR}/panels/bed_screw_location.py"
+TRANSFORM_TARGET="${KS_DIR}/panels/hdr_bed_screw_transform.py"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 TEMP_DIR="$(mktemp -d -t hdr-bed-screw-ui.XXXXXX)"
 trap 'rm -rf -- "${TEMP_DIR}"' EXIT
@@ -74,13 +75,19 @@ printer.write_text(text, encoding="utf-8", newline="\n")
 PY
 
 download "${RAW_BASE}/tools/klipperscreen-panels/bed_screw_location.py" "${TEMP_DIR}/panel.py"
+download "${RAW_BASE}/tools/klipperscreen-panels/hdr_bed_screw_transform.py" "${TEMP_DIR}/transform.py"
 sed "s|__HDR_CONFIG_DIR__|${CONFIG_DIR//|/\\|}|g" "${TEMP_DIR}/panel.py" >"${TEMP_DIR}/panel-rendered.py"
 python3 -m py_compile "${TEMP_DIR}/panel-rendered.py" || die "The Bed Screw Location panel failed Python validation."
+python3 -m py_compile "${TEMP_DIR}/transform.py" || die "The Bed Screw Location orientation helper failed Python validation."
 
 if [[ -f "${PANEL_TARGET}" ]]; then
   cp -a "${PANEL_TARGET}" "${PANEL_TARGET}.hdr-backup-${STAMP}"
 fi
 install -m 0644 "${TEMP_DIR}/panel-rendered.py" "${PANEL_TARGET}"
+if [[ -f "${TRANSFORM_TARGET}" ]]; then
+  cp -a "${TRANSFORM_TARGET}" "${TRANSFORM_TARGET}.hdr-backup-${STAMP}"
+fi
+install -m 0644 "${TEMP_DIR}/transform.py" "${TRANSFORM_TARGET}"
 
 if [[ ! -f "${CONFIG_DIR}/custom/generated/screws_tilt_adjust.cfg" ]]; then
   cat >"${CONFIG_DIR}/custom/generated/screws_tilt_adjust.cfg" <<'EOF'
@@ -127,3 +134,4 @@ else
 fi
 printf 'Installed Bed Screw Location panel: %s\n' "${PANEL_TARGET}"
 printf 'Persistent locations: %s\n' "${CONFIG_DIR}/custom/state/bed_screw_locations.json"
+
