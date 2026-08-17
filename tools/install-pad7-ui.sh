@@ -179,14 +179,19 @@ enable: {{ printer.gcode_macros.count > 0 }}
 [menu __main more zoffset]
 enable: False
 
-# Use a unique menu path so this button sends the cleaning macro. KlipperScreen
-# automatically opens its TESTZ panel when the macro reaches manual-probe mode.
+# Use a unique menu path and temperature setup panel. KlipperScreen opens its
+# TESTZ panel automatically when the cleaning macro reaches manual-probe mode.
 [menu __main more hdr_zoffset_clean]
 name: Z Calibrate + Clean
 icon: z-farther
-method: printer.gcode.script
-params: {"script":"MANUAL_Z_OFFSET_ADJUST"}
+panel: z_offset_setup
 enable: {{ 'MANUAL_Z_OFFSET_ADJUST' in printer.gcode_macros.list }}
+
+[menu __main more hdr_full_bed_mesh]
+name: Full Bed Mesh
+icon: bed-level
+panel: full_bed_mesh_setup
+enable: {{ 'G29' in printer.gcode_macros.list }}
 
 [menu __main more hdr_rotation]
 name: Screen Rotation
@@ -305,6 +310,7 @@ printf 'Touchscreen offsets: landscape %s degrees, portrait %s degrees\n' \
 printf 'KlipperScreen: More > Screen Rotation > choose an explicit orientation\n'
 if [[ ${ROTATION_ONLY} -eq 0 ]]; then
   printf 'KlipperScreen: Main Menu > Macros\n'
+  printf 'Bed Level, Bed Mesh, Input Shaper, and Z Calibrate + Clean remain in More.\n'
   printf 'Motor release: Move > Disable Motors (the motor-off icon beside Home).\n'
   printf 'After releasing motors, home again before any controlled move.\n'
 fi

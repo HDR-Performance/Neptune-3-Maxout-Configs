@@ -84,4 +84,3 @@ The Neptune Maxout files are retained so the theme can be selected again without
 Theme and package integration by **HDR Performance**.
 
 Return to the [documentation index](README.md).
-

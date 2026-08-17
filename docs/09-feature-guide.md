@@ -1,5 +1,20 @@
 # HDR Performance macro and feature guide
 
+## Persistent speed profiles
+
+`SPEED_PROFILE_NORMAL`, `SPEED_PROFILE_FAST`, and `SPEED_PROFILE_LUDICROUS`
+are idle-only controls. Each selection creates and verifies a timestamped
+`printer.cfg` backup, changes only `max_velocity`, `max_accel`, and
+`square_corner_velocity` inside the marked `[printer]` speed block, records the
+active profile, and restarts Klipper so the new limits become the configuration
+defaults. Z limits, pins, driver current, TMC mode, input shaper, probe, heaters,
+and all calibration values are left unchanged.
+
+Normal uses the supported baseline for the selected printer/controller. Fast is
+for controlled high-speed testing. Ludicrous is an experimental ceiling and is
+recommended only with suitable motors, drivers, current, mechanics, input
+shaping, and careful validation. These limits do not make slicer speeds safe.
+
 ## Print workflow
 
 ### `START_PRINT`
@@ -20,7 +35,16 @@ KlipperScreen's **Move** panel places **Disable Motors** beside **Home**. Homing
 
 Pad 7 CB1 and CM4 owners receive the paired [screen and touchscreen rotation controls](15-pad7-display-touch-controls.md) automatically when the GitHub installer detects the Pad 7 hardware.
 
-The Pad 7 CM4 UI installer places a **Macros** button on the KlipperScreen main menu. Klipper must be ready before the panel can populate. Macros beginning with `_` are internal helpers and remain hidden from the user-facing list.
+The Pad 7 CB1/CM4 UI installer keeps KlipperScreen's original **Macros** panel
+on the main menu. It shows the standard searchable, scrolling list with the
+normal parameter fields. Bed Level, Bed Mesh, Input Shaper, and Z Calibrate +
+Clean stay in **More**. The underlying G-code macro names remain unchanged for
+slicer and automation compatibility.
+
+After every OTA update, run **Macros > POST OTA VERIFY**. Then run **More > Z
+Calibrate + Clean**, confirm the
+saved Z offset, and verify the reported input-shaper X/Y types and frequencies
+belong to that physical printer before starting a print.
 
 ## Manual Z-offset calibration
 
@@ -108,4 +132,3 @@ PID macros validate the requested temperature and save the result. Re-run the ap
 Bed-tramming coordinates are model-specific. The standard Neptune 3 package does not invent unverified screw coordinates.
 
 Return to the [documentation index](README.md).
-

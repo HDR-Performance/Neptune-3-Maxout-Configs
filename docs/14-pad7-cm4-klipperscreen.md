@@ -56,7 +56,12 @@ More > Screen Rotation
 
 Choose **Original Landscape**, **Portrait Right**, **Inverted Landscape**, or **Portrait Left**. These are explicit settings: selecting Portrait Right again keeps the screen at 90 degrees instead of advancing it another 90 degrees. **Original Landscape** always restores the factory screen orientation. KlipperScreen restarts so it can change between landscape and portrait layouts. This does not restart Klipper or move the printer.
 
-The installer also adds a permanent **Macros** button to the KlipperScreen main menu. KlipperScreen's default macro panel normally lives under **More**; the top-level button makes the HDR controls easier to find. Public macros such as `MANUAL_Z_OFFSET_ADJUST`, `LOAD_FILAMENT`, `TOGGLE_HEAT_SOAK`, and `MAINTENANCE_STATUS` are shown. Internal helper macros whose names begin with an underscore remain hidden intentionally.
+The installer keeps KlipperScreen's original **Macros** button and standard
+searchable, scrolling macro list. Macro parameter fields and KlipperScreen's
+normal macro settings remain available. Stable commands such as
+`MANUAL_Z_OFFSET_ADJUST`, `LOAD_FILAMENT`, and `SPEED_PROFILE_NORMAL` keep their
+original identifiers for slicer compatibility. Calibration features already
+available in **More** remain there.
 
 Under **More**, the installer hides KlipperScreen's stock **Z Calibrate** shortcut and replaces it with **Z Calibrate + Clean**. The replacement uses its own menu ID so it cannot inherit the stock `panel: zcalibrate` action and accidentally bypass `MANUAL_Z_OFFSET_ADJUST`. It runs the homing, nozzle-heating, left-side purge/wipe, heater shutdown, and positioning sequence first. When the macro enters manual-probe mode, KlipperScreen automatically opens the normal TESTZ adjustment panel.
 

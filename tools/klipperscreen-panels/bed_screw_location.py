@@ -375,4 +375,3 @@ class Panel(ScreenPanel):
         position = self.current_xy()
         if position and self.active:
             self.labels["position"].set_label(f"{self.active[1]}\nX: {position[0]:.2f}  Y: {position[1]:.2f}")
-

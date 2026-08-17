@@ -450,6 +450,14 @@ install_moonraker_updater() {
   fi
 }
 
+install_speed_profile_service() {
+  local installer="${TEMP_DIR}/install-speed-profile-service.sh"
+  info "Installing persistent, package-aware speed profiles"
+  download_file "${RAW_BASE}/tools/install-speed-profile-service.sh" "${installer}"
+  chmod +x "${installer}"
+  HDR_CONFIG_DIR="${CONFIG_DIR}" HDR_RAW_BASE="${RAW_BASE}" "${installer}"
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --package) [[ $# -ge 2 ]] || die "--package requires a value."; PACKAGE_ID="$2"; shift 2 ;;
@@ -475,17 +483,6 @@ validate_config_dir
 [[ -n "${PACKAGE_ID}" ]] || select_package
 resolve_package
 resolve_host_type
-if [[ "${HOST_TYPE}" == "btt-pi" ]]; then
-  case "${MOONRAKER_UPDATER_MODE}" in
-    auto)
-      MOONRAKER_UPDATER_MODE="off"
-      info "BTT Pi V1.2 is manual SSH-install only; OTA registration disabled"
-      ;;
-    on)
-      die "BTT Pi V1.2 OTA is not supported yet. Use --moonraker-updater off."
-      ;;
-  esac
-fi
 case "${PAD7_UI_MODE}" in auto|on|off) ;; *) die "--pad7-ui must be auto, on, or off." ;; esac
 case "${PAD7_THEME_MODE}" in auto|on|off) ;; *) die "--pad7-theme must be auto, on, or off." ;; esac
 case "${BED_SCREW_UI_MODE}" in auto|on|off) ;; *) die "--bed-screw-ui must be auto, on, or off." ;; esac
@@ -636,6 +633,7 @@ install_bed_screw_ui
 install_skr_usb_recovery
 configure_moonraker_kamp
 install_moonraker_updater
+install_speed_profile_service
 
 UPDATE_SCRIPT="${HOME}/hdr-neptune-update.sh"
 if download_file "${RAW_BASE}/update.sh" "${UPDATE_SCRIPT}"; then

@@ -4,6 +4,12 @@ The HDR Performance installer downloads the selected package directly from GitHu
 
 ## What the installer does
 
+The installer also adds the standalone `hdr-speed-profile.service`. This uses
+Klipper's supported remote-method API; it does not patch Klipper or Moonraker.
+The service is shared by Pad 7 CB1, Pad 7 CM4, Raspberry Pi 4, and BTT Pi V1.2
+hosts. Initial installation needs normal `sudo` access. Later profile changes
+are made from the Klipper macro buttons while the printer is idle.
+
 1. Shows a menu for all eight printer/controller packages.
 2. Downloads the selected portable ZIP from this repository.
 3. Verifies the published SHA-256 checksum and checks the ZIP before extraction.
@@ -144,7 +150,28 @@ pin names. Use `--moonraker-updater off` to skip registration or
 KlipperScreen is detected. Use **Bed Screw Location** and answer Yes only when
 the printer physically has 4, 5, or 6 manual adjusters. Stock Neptune 3/3 Pro
 fixed beds must answer No.
-safely.
+
+## OTA updates and printer.cfg replacement
+
+Normal OTA updates preserve the current `printer.cfg` while refreshing the
+selected package's managed macros, KAMP settings, documentation, Pad 7 controls,
+theme, and optional panels. Use `--replace-printer-cfg` only when the exact
+printer, controller, drivers, and hardware match the selected package.
+
+The advanced replacement path displays a Klipper hardware warning, requires the
+phrase `REPLACE PRINTER.CFG`, creates a complete timestamped configuration backup,
+and verifies that the old `printer.cfg` in that backup is byte-for-byte identical
+before overwriting anything. SKR packages retain a valid existing
+`/dev/serial/by-id` MCU path when possible. Local calibration and hardware edits
+may still need to be restored from the reported backup.
+
+After every OTA update:
+
+1. Restart Klipper only after reviewing the staged files.
+2. Run **Macros > Maintenance & Setup > Post-Update Safety Check**.
+3. Run **More > Z Calibrate + Clean** and verify the saved Z offset.
+4. Confirm the reported input-shaper X/Y settings match this printer.
+5. Home and perform a controlled low-speed movement test before printing.
 
 ## After installation
 

@@ -121,4 +121,3 @@ Advanced users may deliberately include the package's new `printer.cfg`:
 That option preserves an existing stable SKR `/dev/serial/by-id/...` line, but
 all Z offset, PID, rotation-distance, thermistor, current, and other machine
 specific values must still be reviewed before issuing `RESTART`.
-

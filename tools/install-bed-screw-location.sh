@@ -151,4 +151,3 @@ else
 fi
 printf 'Installed Bed Screw Location panel: %s\n' "${PANEL_TARGET}"
 printf 'Persistent locations: %s\n' "${CONFIG_DIR}/custom/state/bed_screw_locations.json"
-

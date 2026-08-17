@@ -56,7 +56,10 @@ on the user's actual modified machine.
 
 ## Update policy
 
-This BTT Pi option is manual SSH-install only during its initial testing period.
+After the initial SSH installation, the package-aware Moonraker entry supports
+the same OTA-managed macros, documentation, and persistent speed-profile service
+as the other supported hosts. Pad 7-only screen rotation, touch transforms,
+theme, and built-in accelerometer settings remain disabled on this host.
 It does not register `Neptune-Maxout-Configs` in Moonraker Update Manager. Host-
 specific OTA updates remain limited to the tested Pad 7 CB1/CM4 platforms.
 Re-run the reviewed SSH installer when a future BTT Pi package explicitly says

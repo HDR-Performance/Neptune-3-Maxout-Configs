@@ -63,4 +63,3 @@ for package in PACKAGES:
     archive = ROOT / f"{package}.zip"
     checksums.append(f"{hashlib.sha256(archive.read_bytes()).hexdigest()}  {archive.name}")
 (ROOT / "SHA256SUMS").write_text("\n".join(checksums) + "\n", encoding="ascii", newline="\n")
-

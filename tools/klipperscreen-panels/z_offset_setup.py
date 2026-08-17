@@ -46,4 +46,3 @@ class Panel(ScreenPanel):
         script = f"MANUAL_Z_OFFSET_ADJUST BED_TEMP={self.bed.get_value():.0f} TEMP={self.nozzle.get_value():.0f}"
         self._screen._send_action(widget, "printer.gcode.script", {"script": script})
         self._screen._menu_go_back(home=True)
-
