@@ -6,10 +6,13 @@ BRANCH="${HDR_BRANCH:-main}"
 RAW_BASE="${HDR_RAW_BASE:-https://raw.githubusercontent.com/${REPOSITORY}/${BRANCH}}"
 CONFIG_DIR="${HDR_CONFIG_DIR:-${HOME}/printer_data/config}"
 KLIPPERSCREEN_CONFIG="${CONFIG_DIR}/KlipperScreen.conf"
+KLIPPERSCREEN_DIR="${HDR_KLIPPERSCREEN_DIR:-${HOME}/KlipperScreen}"
+Z_SETUP_TARGET="${KLIPPERSCREEN_DIR}/panels/z_offset_setup.py"
 ASVC_FILE="${HOME}/printer_data/moonraker.asvc"
 ROTATOR_SOURCE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/hdr-pad7-rotate"
+Z_SETUP_SOURCE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/klipperscreen-panels/z_offset_setup.py"
 STAMP="$(date +%Y%m%d-%H%M%S)"
-TEMP_FILE=""
+TEMP_DIR="$(mktemp -d -t hdr-pad7-ui.XXXXXX)"
 ROTATION_ONLY=0
 
 for ARG in "$@"; do
@@ -24,13 +27,23 @@ for ARG in "$@"; do
 done
 
 cleanup() {
-  [[ -z "${TEMP_FILE}" ]] || rm -f -- "${TEMP_FILE}"
+  rm -rf -- "${TEMP_DIR}"
 }
 trap cleanup EXIT
 
 die() {
   printf 'ERROR: %s\n' "$*" >&2
   exit 1
+}
+
+download() {
+  if command -v curl >/dev/null 2>&1; then
+    curl --fail --location --silent --show-error "$1" --output "$2"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -q -O "$2" "$1"
+  else
+    die "curl or wget is required."
+  fi
 }
 
 command -v systemctl >/dev/null 2>&1 || die "systemd is required."
@@ -51,19 +64,31 @@ PORTRAIT_TOUCH_OFFSET="${HDR_PAD7_PORTRAIT_TOUCH_OFFSET:-180}"
 [[ "${PORTRAIT_TOUCH_OFFSET}" =~ ^(0|90|180|270)$ ]] || die "HDR_PAD7_PORTRAIT_TOUCH_OFFSET must be 0, 90, 180, or 270."
 
 if [[ ! -f "${ROTATOR_SOURCE}" ]]; then
-  TEMP_FILE="$(mktemp)"
-  if command -v curl >/dev/null 2>&1; then
-    curl --fail --location --silent --show-error \
-      "${RAW_BASE}/tools/hdr-pad7-rotate" --output "${TEMP_FILE}"
-  elif command -v wget >/dev/null 2>&1; then
-    wget -q -O "${TEMP_FILE}" "${RAW_BASE}/tools/hdr-pad7-rotate"
-  else
-    die "curl or wget is required."
-  fi
-  ROTATOR_SOURCE="${TEMP_FILE}"
+  ROTATOR_SOURCE="${TEMP_DIR}/hdr-pad7-rotate"
+  download "${RAW_BASE}/tools/hdr-pad7-rotate" "${ROTATOR_SOURCE}"
 fi
 
 sudo install -m 0755 "${ROTATOR_SOURCE}" /usr/local/sbin/hdr-pad7-rotate
+
+# Z Calibrate + Clean is a core Pad 7 control. Install and validate its panel
+# before writing the menu entry so an interrupted or partial OTA update cannot
+# leave a button that points to a missing Python file.
+if [[ ${ROTATION_ONLY} -eq 0 ]]; then
+  [[ -d "${KLIPPERSCREEN_DIR}/panels" ]] || \
+    die "KlipperScreen panels directory was not found: ${KLIPPERSCREEN_DIR}/panels"
+  Z_SETUP_PAYLOAD="${TEMP_DIR}/z_offset_setup.py"
+  if [[ -f "${Z_SETUP_SOURCE}" ]]; then
+    cp -a "${Z_SETUP_SOURCE}" "${Z_SETUP_PAYLOAD}"
+  else
+    download "${RAW_BASE}/tools/klipperscreen-panels/z_offset_setup.py" "${Z_SETUP_PAYLOAD}"
+  fi
+  python3 -m py_compile "${Z_SETUP_PAYLOAD}" || die "The Z Offset Setup panel failed Python validation."
+  if [[ -f "${Z_SETUP_TARGET}" ]]; then
+    cp -a "${Z_SETUP_TARGET}" "${Z_SETUP_TARGET}.hdr-backup-${STAMP}"
+  fi
+  install -m 0644 "${Z_SETUP_PAYLOAD}" "${Z_SETUP_TARGET}"
+  [[ -s "${Z_SETUP_TARGET}" ]] || die "Z Offset Setup panel installation failed: ${Z_SETUP_TARGET}"
+fi
 
 SETTINGS_TMP="$(mktemp)"
 cat >"${SETTINGS_TMP}" <<EOF
@@ -154,13 +179,15 @@ MENU_BLOCK="$(mktemp)"
 MENU_TMP="$(mktemp)"
 if [[ -f "${KLIPPERSCREEN_CONFIG}" ]]; then
   awk '
+    /^\[menu __main more hdr_full_bed_mesh\]$/ {orphan=1; next}
+    orphan && /^\[/ {orphan=0}
     /^# HDR Performance Pad 7 rotation begin$/ {skip=1; next}
     /^# HDR Performance Pad 7 rotation end$/ {skip=0; next}
     /^# HDR Performance Pad 7 controls begin$/ {skip=1; next}
     /^# HDR Performance Pad 7 controls end$/ {skip=0; next}
     /^# HDR Performance Z calibration override begin$/ {skip=1; next}
     /^# HDR Performance Z calibration override end$/ {skip=0; next}
-    !skip {print}
+    !skip && !orphan {print}
   ' "${KLIPPERSCREEN_CONFIG}" >"${MENU_CLEAN}"
 fi
 if [[ ${ROTATION_ONLY} -eq 0 ]]; then
@@ -186,12 +213,6 @@ name: Z Calibrate + Clean
 icon: z-farther
 panel: z_offset_setup
 enable: {{ 'MANUAL_Z_OFFSET_ADJUST' in printer.gcode_macros.list }}
-
-[menu __main more hdr_full_bed_mesh]
-name: Full Bed Mesh
-icon: bed-level
-panel: full_bed_mesh_setup
-enable: {{ 'G29' in printer.gcode_macros.list }}
 
 [menu __main more hdr_rotation]
 name: Screen Rotation
@@ -310,7 +331,9 @@ printf 'Touchscreen offsets: landscape %s degrees, portrait %s degrees\n' \
 printf 'KlipperScreen: More > Screen Rotation > choose an explicit orientation\n'
 if [[ ${ROTATION_ONLY} -eq 0 ]]; then
   printf 'KlipperScreen: Main Menu > Macros\n'
+  printf 'Z Calibrate + Clean panel: %s\n' "${Z_SETUP_TARGET}"
   printf 'Bed Level, Bed Mesh, Input Shaper, and Z Calibrate + Clean remain in More.\n'
   printf 'Motor release: Move > Disable Motors (the motor-off icon beside Home).\n'
   printf 'After releasing motors, home again before any controlled move.\n'
 fi
+
