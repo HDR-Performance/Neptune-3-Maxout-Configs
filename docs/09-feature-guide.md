@@ -30,20 +30,27 @@ Run:
 MANUAL_Z_OFFSET_ADJUST
 ```
 
+The Pad 7 setup panel exposes an optional bed target and an adjustable nozzle
+target. A bed target of `0` leaves bed heating disabled. When a bed target is
+selected, the macro waits for the bed first and only then heats the nozzle for
+the purge-and-clean sequence. The existing nozzle default remains `230 C`.
+
+`G29` exposes `BED_TEMP` and `NOZZLE_TEMP` with defaults of `60 C` and `190 C`.
+It waits for the bed, waits for the nozzle, and then runs a normal full-bed mesh.
+
 The workflow:
 
 1. Homes the printer.
-2. Heats only the nozzle to the selected cleaning temperature.
-3. Purges/cleans near the left side of the bed.
-4. Turns the hotend heater off.
-5. Moves to the configured calibration position.
-6. Opens Klipper's `PROBE_CALIBRATE`/TESTZ controls immediately without waiting for cooldown.
+2. If a bed target was selected, waits for the bed to reach it.
+3. Heats the nozzle to the selected cleaning temperature.
+4. Purges/cleans near the left side of the bed.
+5. Turns the hotend heater off.
+6. Moves to the configured calibration position.
+7. Opens Klipper's `PROBE_CALIBRATE`/TESTZ controls immediately without waiting for cooldown.
 
 Use the Mainsail or KlipperScreen up/down TESTZ controls, choose **Accept**, then **Save Config**. Klipper writes the new value to the active root `printer.cfg`. The next run reads the newly saved value.
 
-On Pad 7 installations, use **More > Z Calibrate + Clean**. The installer intentionally disables the stock KlipperScreen Z-calibration shortcut because it starts `PROBE_CALIBRATE` directly and skips nozzle cleaning. The dedicated HDR button sends `MANUAL_Z_OFFSET_ADJUST`; KlipperScreen then opens its TESTZ panel automatically when the cleaning macro reaches calibration mode.
-
-The macro does not heat the bed.
+On Pad 7 installations, use **More > Z Calibrate + Clean**. The installer intentionally disables the stock KlipperScreen Z-calibration shortcut because it starts `PROBE_CALIBRATE` directly and skips nozzle cleaning. The dedicated HDR setup panel lets the user select bed and nozzle targets, sends `MANUAL_Z_OFFSET_ADJUST`, and KlipperScreen then opens its TESTZ panel automatically when the cleaning macro reaches calibration mode.
 
 ## Filament controls
 
@@ -101,3 +108,4 @@ PID macros validate the requested temperature and save the result. Re-run the ap
 Bed-tramming coordinates are model-specific. The standard Neptune 3 package does not invent unverified screw coordinates.
 
 Return to the [documentation index](README.md).
+
