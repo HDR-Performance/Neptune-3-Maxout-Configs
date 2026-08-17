@@ -108,12 +108,23 @@ The Pad host is detected automatically. It may also be selected explicitly:
   --mcu-id /dev/serial/by-id/usb-Klipper_stm32h723xx_EXAMPLE-if00
 ```
 
-Valid host values are `auto`, `cb1`, `cm4`, and `pi4`. On a Pad 7 CM4, the installer adapts the package to `[mcu CM4]`, `cs_pin: CM4:None`, and `spi_bus: spidev0.1`. With `--host pi4`, it removes the Pad 7 host-MCU, ADXL345, and resonance-tester blocks while retaining the saved input-shaper values. This lets a normal Pi 4 installation start without pretending the Pad 7's built-in accelerometer exists. See the [simple Raspberry Pi 4 SSH guide](18-raspberry-pi4-ssh-install.md).
+Valid host values are `auto`, `cb1`, `cm4`, `pi4`, and `btt-pi`. On a Pad 7 CM4, the installer adapts the package to `[mcu CM4]`, `cs_pin: CM4:None`, and `spi_bus: spidev0.1`. With `--host pi4` or `--host btt-pi`, it removes the Pad 7 host-MCU, ADXL345, resonance-tester block, and unavailable `CALIBRATE_SHAPER` macro while retaining the saved input-shaper values. This lets a normal Pi 4 or standalone BTT Pi installation start without pretending the Pad 7's built-in accelerometer exists. See the [simple Raspberry Pi 4 SSH guide](18-raspberry-pi4-ssh-install.md) or [BTT Pi V1.2 guide](20-btt-pi-v12-standard-display.md).
+
+Because the BTT Pi uses the CB1 software-image family, it may identify itself
+as CB1 during automatic detection. Use `--host btt-pi` explicitly; do not rely
+on `--host auto` for a standalone BTT Pi.
 
 For a normal Raspberry Pi 4, the recommended one-command selection is:
 
 ```text
 ./hdr-neptune-install.sh --package neptune3max-robin --host pi4 --pad7-ui off --pad7-theme off
+```
+
+For a Neptune 3 Pro with its stock Robin Nano controller, a standalone BTT Pi
+V1.2, and a standard HDMI touchscreen:
+
+```bash
+./hdr-neptune-install.sh --package neptune3pro-robin --host btt-pi --pad7-ui off --pad7-theme off
 ```
 
 Replace the package ID with the exact printer/controller combination. SKR users must also provide their real `--mcu-id` value.
@@ -128,6 +139,11 @@ package selected during installation, so later updates refresh that exact
 Neptune model and board application instead of guessing from bed dimensions or
 pin names. Use `--moonraker-updater off` to skip registration or
 `--moonraker-updater on` to require it and stop if Moonraker cannot be configured
+
+`--bed-screw-ui auto` installs the interactive KlipperScreen setup whenever
+KlipperScreen is detected. Use **Bed Screw Location** and answer Yes only when
+the printer physically has 4, 5, or 6 manual adjusters. Stock Neptune 3/3 Pro
+fixed beds must answer No.
 safely.
 
 ## After installation
@@ -174,4 +190,3 @@ cp -a Neptune3Max-HDR-Performance-Pad7-Complete-Guide/config/. ~/printer_data/co
 Replace the ZIP and extracted folder names with the exact package selected from the repository. The automated installer is safer because it verifies the expected package layout and manages the backup path consistently.
 
 Return to the [documentation index](README.md).
-

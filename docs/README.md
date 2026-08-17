@@ -12,6 +12,8 @@ This documentation consolidates the useful material from the two original HDR Pe
    - [Robin Nano firmware](03-robin-nano-firmware.md)
    - [SKR 3 EZ firmware and controller conversion](04-skr3ez-conversion.md)
    - [Pad 7 CM4/SKR USB recovery and package-specific OTA updates](19-skr-cm4-usb-and-ota-updates.md)
+- [BTT Pi V1.2 with a standard HDMI touchscreen](20-btt-pi-v12-standard-display.md)
+- [Universal Bed Screw Location](21-bed-screw-location.md)
 4. [Commission the printer safely](05-commissioning-checklist.md)
 5. [Configure KAMP](06-kamp-setup.md)
 6. [Calibrate input shaper with the Pad 7](07-input-shaper.md)
@@ -34,6 +36,7 @@ This documentation consolidates the useful material from the two original HDR Pe
 - [Neptune Maxout branded KlipperScreen theme](16-neptune-maxout-klipperscreen-theme.md)
 - [Pad 7 CM4/CB1 speaker audio and themed button sounds](17-pad7-sound.md)
 - [Standalone Pad 7 rotation installer for CB1 and CM4](19-pad7-rotation-only.md)
+- [Standalone BTT Pi V1.2 host without Pad 7 ADXL assumptions](20-btt-pi-v12-standard-display.md)
 - [Safe Raspberry Pi 4 host adaptation and SSH install](18-raspberry-pi4-ssh-install.md)
 
 ## What changed from the legacy guides

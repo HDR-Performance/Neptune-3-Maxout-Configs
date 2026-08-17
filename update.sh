@@ -10,6 +10,7 @@ INCLUDE_PRINTER_CFG=0
 ASSUME_YES=0
 PAD7_UI_MODE="${HDR_PAD7_UI:-auto}"
 PAD7_THEME_MODE="${HDR_PAD7_THEME:-auto}"
+BED_SCREW_UI_MODE="${HDR_BED_SCREW_UI:-auto}"
 MOONRAKER_KAMP_MODE="${HDR_MOONRAKER_KAMP:-auto}"
 SKR_USB_MODE="${HDR_SKR_USB_RECOVERY:-auto}"
 MOONRAKER_UPDATER_MODE="${HDR_MOONRAKER_UPDATER:-auto}"
@@ -30,6 +31,7 @@ Options:
   --include-printer-cfg  Also replace printer.cfg (advanced; re-check calibration and MCU ID).
   --pad7-ui MODE         Refresh rotation/touch controls: auto (default), on, or off.
   --pad7-theme MODE      Refresh Maxout theme/sound: auto (default), on, or off.
+  --bed-screw-ui MODE    Refresh interactive screw setup: auto, on, or off.
   --moonraker-kamp MODE  Safe KAMP Moonraker setup: auto (default), on, or off.
   --skr-usb MODE         CM4/SKR USB recovery: auto (default), on, or off.
   --moonraker-updater MODE  Register in Mainsail: auto (default), on, or off.
@@ -49,6 +51,7 @@ while [[ $# -gt 0 ]]; do
     --include-printer-cfg) INCLUDE_PRINTER_CFG=1; shift ;;
     --pad7-ui) [[ $# -ge 2 ]] || die "--pad7-ui requires a value"; PAD7_UI_MODE="$2"; shift 2 ;;
     --pad7-theme) [[ $# -ge 2 ]] || die "--pad7-theme requires a value"; PAD7_THEME_MODE="$2"; shift 2 ;;
+    --bed-screw-ui) [[ $# -ge 2 ]] || die "--bed-screw-ui requires a value"; BED_SCREW_UI_MODE="$2"; shift 2 ;;
     --moonraker-kamp) [[ $# -ge 2 ]] || die "--moonraker-kamp requires a value"; MOONRAKER_KAMP_MODE="$2"; shift 2 ;;
     --skr-usb) [[ $# -ge 2 ]] || die "--skr-usb requires a value"; SKR_USB_MODE="$2"; shift 2 ;;
     --moonraker-updater) [[ $# -ge 2 ]] || die "--moonraker-updater requires a value"; MOONRAKER_UPDATER_MODE="$2"; shift 2 ;;
@@ -61,6 +64,7 @@ done
 
 case "${PAD7_UI_MODE}" in auto|on|off) ;; *) die "--pad7-ui must be auto, on, or off." ;; esac
 case "${PAD7_THEME_MODE}" in auto|on|off) ;; *) die "--pad7-theme must be auto, on, or off." ;; esac
+case "${BED_SCREW_UI_MODE}" in auto|on|off) ;; *) die "--bed-screw-ui must be auto, on, or off." ;; esac
 case "${MOONRAKER_KAMP_MODE}" in auto|on|off) ;; *) die "--moonraker-kamp must be auto, on, or off." ;; esac
 case "${SKR_USB_MODE}" in auto|on|off) ;; *) die "--skr-usb must be auto, on, or off." ;; esac
 case "${MOONRAKER_UPDATER_MODE}" in auto|on|off) ;; *) die "--moonraker-updater must be auto, on, or off." ;; esac
@@ -122,6 +126,7 @@ printf 'Updates: custom/, KAMP_Settings.cfg, HDR_Documentation/'
 [[ ${INCLUDE_PRINTER_CFG} -eq 1 ]] && printf ', printer.cfg'
 printf '\nPreserves: Moonraker, Mainsail, KlipperScreen, updater-managed KAMP/, and all other host files.\n'
 printf 'Pad 7 rotation/touch: %s; Maxout theme/sound: %s\n' "${PAD7_UI_MODE}" "${PAD7_THEME_MODE}"
+printf 'Interactive Bed Screw Location UI: %s\n' "${BED_SCREW_UI_MODE}"
 printf 'Moonraker/KAMP: %s; CM4/SKR USB recovery: %s\n' "${MOONRAKER_KAMP_MODE}" "${SKR_USB_MODE}"
 printf 'Moonraker Update Manager registration: %s\n' "${MOONRAKER_UPDATER_MODE}"
 if [[ ${ASSUME_YES} -ne 1 ]]; then
@@ -136,10 +141,15 @@ mkdir -p "${backup}"
 cp -a "${CONFIG_DIR}/custom" "${backup}/" 2>/dev/null || true
 cp -a "${CONFIG_DIR}/KAMP_Settings.cfg" "${backup}/" 2>/dev/null || true
 cp -a "${CONFIG_DIR}/HDR_Documentation" "${backup}/" 2>/dev/null || true
+mkdir -p "${temp_dir}/preserved-custom"
+cp -a "${CONFIG_DIR}/custom/generated" "${temp_dir}/preserved-custom/" 2>/dev/null || true
+cp -a "${CONFIG_DIR}/custom/state" "${temp_dir}/preserved-custom/" 2>/dev/null || true
 [[ ${INCLUDE_PRINTER_CFG} -eq 0 ]] || cp -a "${CONFIG_DIR}/printer.cfg" "${backup}/"
 
 rm -rf -- "${CONFIG_DIR}/custom" "${CONFIG_DIR}/HDR_Documentation"
 cp -a "${source_config}/custom" "${CONFIG_DIR}/custom"
+cp -a "${temp_dir}/preserved-custom/generated/." "${CONFIG_DIR}/custom/generated/" 2>/dev/null || true
+cp -a "${temp_dir}/preserved-custom/state/." "${CONFIG_DIR}/custom/state/" 2>/dev/null || true
 cp -a "${source_config}/KAMP_Settings.cfg" "${CONFIG_DIR}/KAMP_Settings.cfg"
 mkdir -p "${CONFIG_DIR}/HDR_Documentation"
 package_root="$(dirname "${source_config}")"
@@ -190,6 +200,18 @@ run_pad7_theme_update() {
     on) ;;
   esac
   download "${RAW_BASE}/tools/install-neptune-maxout-theme.sh" "${installer}"
+  chmod +x "${installer}"
+  HDR_CONFIG_DIR="${CONFIG_DIR}" HDR_RAW_BASE="${RAW_BASE}" "${installer}"
+}
+
+run_bed_screw_ui_update() {
+  local installer="${temp_dir}/install-bed-screw-location.sh"
+  case "${BED_SCREW_UI_MODE}" in
+    off) printf 'Interactive Bed Screw Location UI refresh disabled.\n'; return 0 ;;
+    auto) [[ -d "${HOME}/KlipperScreen/panels" ]] || { printf 'KlipperScreen not detected; Bed Screw Location UI skipped.\n'; return 0; } ;;
+    on) [[ -d "${HOME}/KlipperScreen/panels" ]] || return 1 ;;
+  esac
+  download "${RAW_BASE}/tools/install-bed-screw-location.sh" "${installer}"
   chmod +x "${installer}"
   HDR_CONFIG_DIR="${CONFIG_DIR}" HDR_RAW_BASE="${RAW_BASE}" "${installer}"
 }
@@ -279,6 +301,10 @@ if ! run_pad7_theme_update; then
   [[ "${PAD7_THEME_MODE}" != on ]] || die "Required Neptune Maxout theme refresh failed."
   printf 'WARNING: Package files updated, but the optional theme/sound refresh failed.\n' >&2
 fi
+if ! run_bed_screw_ui_update; then
+  [[ "${BED_SCREW_UI_MODE}" != on ]] || die "Required Bed Screw Location UI refresh failed."
+  printf 'WARNING: Package files updated, but the optional Bed Screw Location UI refresh failed.\n' >&2
+fi
 if ! run_moonraker_kamp_update; then
   [[ "${MOONRAKER_KAMP_MODE}" != on ]] || die "Required Moonraker KAMP preflight failed."
   printf 'WARNING: Package files updated, but the optional Moonraker KAMP preflight failed or rolled back.\n' >&2
@@ -294,4 +320,3 @@ fi
 
 printf 'OTA update staged successfully. Backup: %s\n' "${backup}"
 printf 'Review the files in Mainsail, then issue RESTART when ready.\n'
-
