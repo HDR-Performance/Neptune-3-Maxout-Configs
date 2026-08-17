@@ -36,5 +36,6 @@ lines.insert(first, begin + newline)
 lines.insert(last + 2, end + newline)
 updated = text[:start] + "".join(lines) + text[stop:]
 temporary = path.with_name(".printer.cfg.hdr-marker.tmp")
-temporary.write_text(updated, encoding="utf-8", newline="")
+with temporary.open("w", encoding="utf-8", newline="") as handle:
+    handle.write(updated)
 os.replace(temporary, path)

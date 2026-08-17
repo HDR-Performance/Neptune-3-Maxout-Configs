@@ -254,7 +254,7 @@ detect_host_type() {
   [[ -r /proc/device-tree/model ]] && model="$(tr -d '\0' </proc/device-tree/model)"
   case "${model}" in
     *"Compute Module 4"*) printf 'cm4' ;;
-    *"BTT-CB1"*|*"BIGTREETECH CB1"*) printf 'cb1' ;;
+    *"BTT-CB1"*|*"BIGTREETECH CB1"*|*"BQ-H616"*) printf 'cb1' ;;
     *"Raspberry Pi 4 Model"*) printf 'pi4' ;;
     *) printf 'unknown' ;;
   esac
@@ -364,6 +364,27 @@ if ! run_moonraker_updater_registration; then
 fi
 if ! run_speed_profile_update; then
   die "Persistent speed-profile installation failed; the verified printer.cfg backup is at ${backup}."
+fi
+
+# Moonraker's package hook runs as root so system-level Pad 7 refreshes do not
+# depend on an interactive sudo prompt. Return all user-maintained artifacts to
+# the account that registered the updater.
+if [[ ${EUID} -eq 0 && -n "${HDR_RUN_USER:-}" ]]; then
+  run_group="$(id -gn "${HDR_RUN_USER}")"
+  chown "${HDR_RUN_USER}:${run_group}" "${CONFIG_DIR}"
+  chown -R "${HDR_RUN_USER}:${run_group}" \
+    "${CONFIG_DIR}/custom" \
+    "${CONFIG_DIR}/HDR_Documentation" \
+    "${CONFIG_DIR}/KAMP_Settings.cfg" \
+    "${CONFIG_DIR}/.hdr-performance-update" \
+    "${backup}"
+  for user_file in \
+    "${CONFIG_DIR}/printer.cfg" \
+    "${CONFIG_DIR}/KlipperScreen.conf" \
+    "${HOME}/KlipperScreen/panels/z_offset_setup.py" \
+    "${HOME}/KlipperScreen/panels/bed_screw_location.py"; do
+    [[ ! -e "${user_file}" ]] || chown "${HDR_RUN_USER}:${run_group}" "${user_file}"
+  done
 fi
 
 printf 'OTA update staged successfully. Backup: %s\n' "${backup}"
