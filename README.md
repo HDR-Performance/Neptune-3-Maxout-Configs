@@ -163,7 +163,8 @@ Every ZIP contains `START_HERE.md`, a model-specific installation sequence, wiri
 
 | Command | Purpose |
 |---|---|
-| `MANUAL_Z_OFFSET_ADJUST` | Clean the nozzle and open Klipper's TESTZ calibration controls |
+| `MANUAL_Z_OFFSET_ADJUST` | Optionally heat the bed first, clean the nozzle at an adjustable target, then open Klipper's TESTZ controls |
+| `G29` | Heat the bed and nozzle to adjustable 60/190 C defaults, then create a normal full-bed mesh |
 | `MANUAL_BED_TRAMMING` | Probe verified screw locations on supported models |
 | `BED_SCREW_LOCATION` | Open the universal KlipperScreen map to teach 4-6 physical adjuster locations |
 | `ENABLE_HEAT_SOAK` / `DISABLE_HEAT_SOAK` | Persistently enable or disable the pre-KAMP soak |
@@ -192,3 +193,4 @@ These are community modification packages, not official Elegoo, BIGTREETECH, Kli
 ## License
 
 This repository is distributed under the [GNU General Public License v3.0](LICENSE). Third-party projects and bundled components retain their own authorship and license terms.
+
