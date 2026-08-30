@@ -7,6 +7,14 @@ from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
+SHARED_CANCEL_MACRO = (
+    ROOT
+    / "Neptune3Max-SKR3EZ-TMC5160Pro-HDR-Performance"
+    / "config"
+    / "custom"
+    / "macros"
+    / "cancel_print.cfg"
+)
 PACKAGES = [
     "Neptune3-HDR-Performance-Pad7-Complete-Guide",
     "Neptune3Pro-HDR-Performance-Pad7-Complete-Guide",
@@ -39,6 +47,9 @@ def rebuild(name: str) -> None:
     expanded = ROOT / name
     overlay = ROOT / "package-overlays" / name
     if expanded.is_dir():
+        cancel_target = expanded / "config" / "custom" / "macros" / "cancel_print.cfg"
+        if cancel_target != SHARED_CANCEL_MACRO:
+            shutil.copy2(SHARED_CANCEL_MACRO, cancel_target)
         write_archive(expanded, target, name)
         return
     if not target.is_file():
@@ -52,6 +63,10 @@ def rebuild(name: str) -> None:
             raise RuntimeError(f"Unexpected package root in {target.name}")
         if overlay.is_dir():
             shutil.copytree(overlay, source, dirs_exist_ok=True)
+        cancel_target = source / "config" / "custom" / "macros" / "cancel_print.cfg"
+        if not cancel_target.parent.is_dir():
+            raise RuntimeError(f"Macro directory not found in {target.name}")
+        shutil.copy2(SHARED_CANCEL_MACRO, cancel_target)
         write_archive(source, target, name)
 
 

@@ -8,6 +8,7 @@ CONFIG_DIR="${HDR_CONFIG_DIR:-${HOME}/printer_data/config}"
 KLIPPERSCREEN_CONFIG="${CONFIG_DIR}/KlipperScreen.conf"
 KLIPPERSCREEN_DIR="${HDR_KLIPPERSCREEN_DIR:-${HOME}/KlipperScreen}"
 Z_SETUP_TARGET="${KLIPPERSCREEN_DIR}/panels/z_offset_setup.py"
+Z_CALIBRATE_TARGET="${KLIPPERSCREEN_DIR}/panels/zcalibrate.py"
 ASVC_FILE="${HOME}/printer_data/moonraker.asvc"
 ROTATOR_SOURCE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/hdr-pad7-rotate"
 Z_SETUP_SOURCE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/klipperscreen-panels/z_offset_setup.py"
@@ -101,6 +102,33 @@ if [[ ${ROTATION_ONLY} -eq 0 ]]; then
   as_root install -o "${PANEL_OWNER}" -g "${PANEL_GROUP}" -m 0644 \
     "${Z_SETUP_PAYLOAD}" "${Z_SETUP_TARGET}"
   [[ -s "${Z_SETUP_TARGET}" ]] || die "Z Offset Setup panel installation failed: ${Z_SETUP_TARGET}"
+
+  # Stock KlipperScreen leaves the nozzle at paper-test height after ACCEPT.
+  # Patch that exact action idempotently so a saved Z offset cannot leave the
+  # nozzle touching the build plate. Preserve the vendor file for rollback.
+  [[ -f "${Z_CALIBRATE_TARGET}" ]] || \
+    die "KlipperScreen Z calibration panel was not found: ${Z_CALIBRATE_TARGET}"
+  Z_CALIBRATE_PAYLOAD="${TEMP_DIR}/zcalibrate.py"
+  cp -a "${Z_CALIBRATE_TARGET}" "${Z_CALIBRATE_PAYLOAD}"
+  python3 - "${Z_CALIBRATE_PAYLOAD}" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text()
+safe_action = 'self._screen._ws.api.gcode_script("ACCEPT\\nG91\\nG0 Z5 F600\\nG90")'
+stock_action = 'self._screen._ws.api.gcode_script("ACCEPT")'
+if safe_action not in text:
+    if stock_action not in text:
+        raise SystemExit("Unable to locate the KlipperScreen Z ACCEPT action")
+    text = text.replace(stock_action, safe_action, 1)
+    path.write_text(text)
+PY
+  python3 -m py_compile "${Z_CALIBRATE_PAYLOAD}" || \
+    die "The patched KlipperScreen Z calibration panel failed Python validation."
+  cp -a "${Z_CALIBRATE_TARGET}" "${Z_CALIBRATE_TARGET}.hdr-backup-${STAMP}"
+  as_root install -o "${PANEL_OWNER}" -g "${PANEL_GROUP}" -m 0644 \
+    "${Z_CALIBRATE_PAYLOAD}" "${Z_CALIBRATE_TARGET}"
 fi
 
 SETTINGS_TMP="$(mktemp)"
@@ -346,8 +374,8 @@ printf 'KlipperScreen: More > Screen Rotation > choose an explicit orientation\n
 if [[ ${ROTATION_ONLY} -eq 0 ]]; then
   printf 'KlipperScreen: Main Menu > Macros\n'
   printf 'Z Calibrate + Clean panel: %s\n' "${Z_SETUP_TARGET}"
+  printf 'Z calibration safe lift: 5 mm after ACCEPT\n'
   printf 'Bed Level, Bed Mesh, Input Shaper, and Z Calibrate + Clean remain in More.\n'
   printf 'Motor release: Move > Disable Motors (the motor-off icon beside Home).\n'
   printf 'After releasing motors, home again before any controlled move.\n'
 fi
-
