@@ -23,7 +23,7 @@ Validates slicer temperatures, homes the printer, optionally heat-soaks the bed,
 
 ### `END_PRINT`
 
-Records maintenance totals, lifts within the configured Z limit, presents the part, clears the mesh, and turns heaters and fans off.
+Records maintenance totals, lifts within the configured Z limit, presents the part, clears the mesh, and turns heaters and fans off. When the configured `LED_Light` is present, it smoothly pulses for up to two minutes and then turns fully off. `ACKNOWLEDGE_PRINT_COMPLETE` dismisses the alert early and also turns the light off.
 
 ### Pause, resume, and cancel
 
@@ -87,6 +87,11 @@ ABORT_RUNOUT
 ```
 
 An unattended runout pause keeps the requested hotend temperature available for ten minutes. It then shuts the hotend off while remembering the resume temperature. `RUNOUT_RESUME` reheats before continuing.
+
+When `LED_Light` is configured, a filament runout starts a slow light pulse that
+continues until a successful `RUNOUT_RESUME`. The prior manually selected light
+level is restored after resuming. Pad 7 users can set that level from **Light
+Brightness** on the main menu.
 
 Never reach into the printer while motion can resume automatically.
 

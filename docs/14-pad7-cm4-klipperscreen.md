@@ -63,6 +63,13 @@ normal macro settings remain available. Stable commands such as
 original identifiers for slicer compatibility. Calibration features already
 available in **More** remain there.
 
+In either portrait orientation, the HDR dashboard uses a compact heater-only
+status area with exact extruder and bed temperatures. The large temperature
+history graph and passive MCU/host sensor rows are omitted in portrait so the
+three-column control grid stays visible without the former home-screen scroll
+bars. Landscape mode retains KlipperScreen's normal temperature graph and
+sensor behavior.
+
 Under **More**, the installer hides KlipperScreen's stock **Z Calibrate** shortcut and replaces it with **Z Calibrate + Clean**. The replacement uses its own menu ID so it cannot inherit the stock `panel: zcalibrate` action and accidentally bypass `MANUAL_Z_OFFSET_ADJUST`. It runs the homing, nozzle-heating, left-side purge/wipe, heater shutdown, and positioning sequence first. When the macro enters manual-probe mode, KlipperScreen automatically opens the normal TESTZ adjustment panel.
 
 To force a known orientation over SSH:

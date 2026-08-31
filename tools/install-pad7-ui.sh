@@ -9,6 +9,7 @@ KLIPPERSCREEN_CONFIG="${CONFIG_DIR}/KlipperScreen.conf"
 KLIPPERSCREEN_DIR="${HDR_KLIPPERSCREEN_DIR:-${HOME}/KlipperScreen}"
 Z_SETUP_TARGET="${KLIPPERSCREEN_DIR}/panels/z_offset_setup.py"
 Z_CALIBRATE_TARGET="${KLIPPERSCREEN_DIR}/panels/zcalibrate.py"
+MAIN_MENU_TARGET="${KLIPPERSCREEN_DIR}/panels/main_menu.py"
 ASVC_FILE="${HOME}/printer_data/moonraker.asvc"
 ROTATOR_SOURCE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/hdr-pad7-rotate"
 Z_SETUP_SOURCE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/klipperscreen-panels/z_offset_setup.py"
@@ -129,6 +130,108 @@ PY
   cp -a "${Z_CALIBRATE_TARGET}" "${Z_CALIBRATE_TARGET}.hdr-backup-${STAMP}"
   as_root install -o "${PANEL_OWNER}" -g "${PANEL_GROUP}" -m 0644 \
     "${Z_CALIBRATE_PAYLOAD}" "${Z_CALIBRATE_TARGET}"
+
+  # KlipperScreen's stock portrait dashboard gives the temperature graph three
+  # fifths of a 600x1024 display and leaves the controls in a short scrolling
+  # region. Keep the exact numeric heater readouts, remove the graph and passive
+  # electronics sensors in portrait, and dedicate three fifths to controls.
+  [[ -f "${MAIN_MENU_TARGET}" ]] || \
+    die "KlipperScreen main-menu panel was not found: ${MAIN_MENU_TARGET}"
+  MAIN_MENU_PAYLOAD="${TEMP_DIR}/main_menu.py"
+  cp -a "${MAIN_MENU_TARGET}" "${MAIN_MENU_PAYLOAD}"
+  python3 - "${MAIN_MENU_PAYLOAD}" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text()
+
+old_layout = '''        if self._screen.vertical_mode:
+            self.main_menu.attach(self.create_left_panel(), 0, 0, 1, 3)
+            self.labels["menu"] = self.arrangeMenuItems(items, 3, True)
+            self.menu_scroll.add(self.labels["menu"])
+            self.main_menu.attach(self.menu_scroll, 0, 3, 1, 2)
+'''
+new_layout = '''        if self._screen.vertical_mode:
+            # Compact portrait dashboard: exact heater readings above a roomy
+            # three-column control grid, without the oversized history graph.
+            self.main_menu.attach(self.create_left_panel(), 0, 0, 1, 2)
+            self.labels["menu"] = self.arrangeMenuItems(items, 3, True)
+            self.menu_scroll.add(self.labels["menu"])
+            self.main_menu.attach(self.menu_scroll, 0, 2, 1, 3)
+'''
+previous_layout = '''        if self._screen.vertical_mode:
+            # Compact portrait dashboard: exact heater readings above a roomy
+            # three-column control grid, without the oversized history graph.
+            self.main_menu.attach(self.create_left_panel(), 0, 0, 1, 1)
+            self.labels["menu"] = self.arrangeMenuItems(items, 3, True)
+            self.menu_scroll.add(self.labels["menu"])
+            self.main_menu.attach(self.menu_scroll, 0, 1, 1, 4)
+'''
+old_hide = '''            self.main_menu.attach(top, 0, 0, 1, 3)
+            self.main_menu.attach(self.menu_scroll, 0, 3, 1, 2)
+'''
+new_hide = '''            self.main_menu.attach(top, 0, 0, 1, 2)
+            self.main_menu.attach(self.menu_scroll, 0, 2, 1, 3)
+'''
+previous_hide = '''            self.main_menu.attach(top, 0, 0, 1, 1)
+            self.main_menu.attach(self.menu_scroll, 0, 1, 1, 4)
+'''
+old_sensor = '''        elif self._config.get_main_config().getboolean("only_heaters", False):
+            return False
+        else:
+'''
+new_sensor = '''        elif self._screen.vertical_mode:
+            # MCU/host sensors remain available elsewhere; omit them from the
+            # small portrait home screen so its heater list never scrolls.
+            return False
+        elif self._config.get_main_config().getboolean("only_heaters", False):
+            return False
+        else:
+'''
+old_visibility = '''        if self.left_panel is None:
+            logging.info("No left panel")
+            return
+        count = 0
+'''
+new_visibility = '''        if self.left_panel is None:
+            logging.info("No left panel")
+            return
+        if self._screen.vertical_mode:
+            force_hide = True
+        count = 0
+'''
+
+for old, previous, new, label in (
+    (old_layout, previous_layout, new_layout, "portrait layout"),
+    (old_hide, previous_hide, new_hide, "portrait keypad restore"),
+):
+    if new in text:
+        continue
+    if previous in text:
+        text = text.replace(previous, new, 1)
+        continue
+    if old not in text:
+        raise SystemExit(f"Unable to locate KlipperScreen {label}")
+    text = text.replace(old, new, 1)
+
+for old, new, label in (
+    (old_sensor, new_sensor, "portrait sensor filter"),
+    (old_visibility, new_visibility, "portrait graph suppression"),
+):
+    if new in text:
+        continue
+    if old not in text:
+        raise SystemExit(f"Unable to locate KlipperScreen {label}")
+    text = text.replace(old, new, 1)
+
+path.write_text(text)
+PY
+  python3 -m py_compile "${MAIN_MENU_PAYLOAD}" || \
+    die "The compact KlipperScreen main-menu panel failed Python validation."
+  cp -a "${MAIN_MENU_TARGET}" "${MAIN_MENU_TARGET}.hdr-backup-${STAMP}"
+  as_root install -o "${PANEL_OWNER}" -g "${PANEL_GROUP}" -m 0644 \
+    "${MAIN_MENU_PAYLOAD}" "${MAIN_MENU_TARGET}"
 fi
 
 SETTINGS_TMP="$(mktemp)"
@@ -240,6 +343,12 @@ name: Macros
 icon: custom-script
 panel: gcode_macros
 enable: {{ printer.gcode_macros.count > 0 }}
+
+[menu __main hdr_light_brightness]
+name: Light Brightness
+icon: light
+panel: led
+enable: {{ printer.leds.count > 0 }}
 
 # Hide KlipperScreen's stock More > Z Calibrate entry. Reusing this exact menu
 # path would inherit its `panel: zcalibrate` setting, which takes precedence
@@ -373,6 +482,8 @@ printf 'Touchscreen offsets: landscape %s degrees, portrait %s degrees\n' \
 printf 'KlipperScreen: More > Screen Rotation > choose an explicit orientation\n'
 if [[ ${ROTATION_ONLY} -eq 0 ]]; then
   printf 'KlipperScreen: Main Menu > Macros\n'
+  printf 'KlipperScreen: Main Menu > Light Brightness (0-255 slider plus Off/On)\n'
+  printf 'Portrait dashboard: compact heater readouts, no history graph, expanded controls\n'
   printf 'Z Calibrate + Clean panel: %s\n' "${Z_SETUP_TARGET}"
   printf 'Z calibration safe lift: 5 mm after ACCEPT\n'
   printf 'Bed Level, Bed Mesh, Input Shaper, and Z Calibrate + Clean remain in More.\n'

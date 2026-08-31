@@ -15,6 +15,8 @@ SHARED_CANCEL_MACRO = (
     / "macros"
     / "cancel_print.cfg"
 )
+SHARED_MACRO_DIR = SHARED_CANCEL_MACRO.parent
+SHARED_FILAMENT_MACRO = SHARED_MACRO_DIR / "filament_control.cfg"
 PACKAGES = [
     "Neptune3-HDR-Performance-Pad7-Complete-Guide",
     "Neptune3Pro-HDR-Performance-Pad7-Complete-Guide",
@@ -25,6 +27,80 @@ PACKAGES = [
     "Neptune3Plus-SKR3EZ-TMC5160Pro-HDR-Performance",
     "Neptune3Max-SKR3EZ-TMC5160Pro-HDR-Performance",
 ]
+
+
+def section(text: str, header: str) -> tuple[int, int, str]:
+    start = text.index(header)
+    end = text.find("\n[", start + len(header))
+    if end < 0:
+        end = len(text)
+    return start, end, text[start:end]
+
+
+def replace_section(text: str, header: str, updated: str) -> str:
+    start, end, _ = section(text, header)
+    return text[:start] + updated + text[end:]
+
+
+def add_led_alerts(macro_dir: Path) -> None:
+    """Add the shared LED notifier without replacing model-specific macros."""
+    filament_path = macro_dir / "filament_control.cfg"
+    start_path = macro_dir / "start_print.cfg"
+    end_path = macro_dir / "end_print.cfg"
+    for path in (filament_path, start_path, end_path):
+        if not path.is_file():
+            raise RuntimeError(f"Required macro file not found: {path}")
+
+    shared = SHARED_FILAMENT_MACRO.read_text(encoding="utf-8")
+    led_start = shared.index("[gcode_macro _LED_ALERT_STATE]")
+    led_end = shared.index("[gcode_macro _CLEAR_FILAMENT_STATE]")
+    led_block = shared[led_start:led_end]
+
+    filament = filament_path.read_text(encoding="utf-8")
+    if "[gcode_macro _LED_ALERT_STATE]" not in filament:
+        marker = "[gcode_macro _CLEAR_FILAMENT_STATE]"
+        if marker not in filament:
+            raise RuntimeError(f"Filament state macro not found in {filament_path}")
+        filament = filament.replace(marker, led_block + marker, 1)
+
+    _, _, clear = section(filament, "[gcode_macro _CLEAR_FILAMENT_STATE]")
+    if "_STOP_LED_ALERT" not in clear:
+        marker = "    UPDATE_DELAYED_GCODE ID=_RUNOUT_COOLDOWN DURATION=0\n"
+        if marker not in clear:
+            raise RuntimeError(f"Runout cooldown reset not found in {filament_path}")
+        clear = clear.replace(marker, marker + "    _STOP_LED_ALERT\n", 1)
+        filament = replace_section(filament, "[gcode_macro _CLEAR_FILAMENT_STATE]", clear)
+
+    _, _, runout = section(filament, "[gcode_macro _FILAMENT_RUNOUT]")
+    if "_START_LED_ALERT MODE=RUNOUT" not in runout:
+        marker = "        PAUSE\n"
+        if marker not in runout:
+            raise RuntimeError(f"Runout pause not found in {filament_path}")
+        runout = runout.replace(marker, marker + "        _START_LED_ALERT MODE=RUNOUT\n", 1)
+        filament = replace_section(filament, "[gcode_macro _FILAMENT_RUNOUT]", runout)
+
+    _, _, resume = section(filament, "[gcode_macro RUNOUT_RESUME]")
+    if "_STOP_LED_ALERT" not in resume:
+        marker = "        RESUME\n"
+        if marker not in resume:
+            raise RuntimeError(f"Runout resume command not found in {filament_path}")
+        resume = resume.replace(marker, "        _STOP_LED_ALERT\n" + marker, 1)
+        filament = replace_section(filament, "[gcode_macro RUNOUT_RESUME]", resume)
+    filament_path.write_text(filament, encoding="utf-8", newline="\n")
+
+    start = start_path.read_text(encoding="utf-8")
+    _, _, start_macro = section(start, "[gcode_macro START_PRINT]")
+    if "_STOP_LED_ALERT" not in start_macro:
+        start_macro = start_macro.replace("gcode:\n", "gcode:\n    _STOP_LED_ALERT\n", 1)
+        start = replace_section(start, "[gcode_macro START_PRINT]", start_macro)
+        start_path.write_text(start, encoding="utf-8", newline="\n")
+
+    end = end_path.read_text(encoding="utf-8")
+    _, _, end_macro = section(end, "[gcode_macro END_PRINT]")
+    if "_START_LED_ALERT MODE=COMPLETE" not in end_macro:
+        end_macro = end_macro.rstrip() + "\n    _START_LED_ALERT MODE=COMPLETE\n"
+        end = replace_section(end, "[gcode_macro END_PRINT]", end_macro)
+        end_path.write_text(end, encoding="utf-8", newline="\n")
 
 
 def write_archive(source: Path, target: Path, name: str) -> None:
@@ -50,6 +126,7 @@ def rebuild(name: str) -> None:
         cancel_target = expanded / "config" / "custom" / "macros" / "cancel_print.cfg"
         if cancel_target != SHARED_CANCEL_MACRO:
             shutil.copy2(SHARED_CANCEL_MACRO, cancel_target)
+        add_led_alerts(cancel_target.parent)
         write_archive(expanded, target, name)
         return
     if not target.is_file():
@@ -67,6 +144,7 @@ def rebuild(name: str) -> None:
         if not cancel_target.parent.is_dir():
             raise RuntimeError(f"Macro directory not found in {target.name}")
         shutil.copy2(SHARED_CANCEL_MACRO, cancel_target)
+        add_led_alerts(cancel_target.parent)
         write_archive(source, target, name)
 
 

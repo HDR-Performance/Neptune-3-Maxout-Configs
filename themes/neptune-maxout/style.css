@@ -203,12 +203,23 @@ scrollbar,
 scrollbar button,
 scrollbar trough {
     background-color: rgba(7, 7, 9, 0.92);
+    min-width: 0.30em;
+    min-height: 0.30em;
 }
 
 scrollbar slider {
-    background-color: #7b1722;
-    background-image: linear-gradient(to right, #6b141e, #d7192b);
+    background-color: rgba(123, 23, 34, 0.52);
+    background-image: linear-gradient(to right, rgba(107, 20, 30, 0.46), rgba(215, 25, 43, 0.60));
     border-radius: 999px;
+    min-width: 0.30em;
+    min-height: 0.30em;
+}
+
+/* Keep the compact portrait heater readouts crisp without oversized bubbles. */
+.heater-grid button {
+    border-radius: 1.10em;
+    margin: 0.10em;
+    padding: 0.20em 0.34em;
 }
 
 .dialog {

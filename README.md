@@ -123,6 +123,7 @@ Every ZIP contains `START_HERE.md`, a model-specific installation sequence, wiri
 - Friendly manual Z-offset calibration with nozzle pre-cleaning
 - Filament load, unload, color change, and runout recovery
 - Ten-minute unattended runout hotend cooldown
+- Pad 7 light-brightness control plus runout and print-complete LED alerts
 - Persistent optional bed heat soak before KAMP
 - Persistent PLA, PETG, and TPU pressure-advance profiles
 - Maintenance counters and guided PID tuning
@@ -131,6 +132,7 @@ Every ZIP contains `START_HERE.md`, a model-specific installation sequence, wiri
 - Each formerly inline `printer.cfg` macro stored in its own clearly named file
 - Standalone BTT Pi V1.2 host mode without Pad 7 MCU/ADXL/display assumptions
 - Automatic Pad 7 CB1/CM4 screen rotation with the tested matching touchscreen matrix
+- Compact portrait dashboard with exact heater readouts and an expanded control grid
 - Neptune Maxout Pad 7 theme with branded background, red/charcoal controls, a printer badge, and original retro laser button feedback on CM4 or CB1; the CM4 installer includes the hardware-tested PipeWire/WirePlumber HDMI0 fix
 
 > [!WARNING]
