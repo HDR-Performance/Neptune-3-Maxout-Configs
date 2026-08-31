@@ -92,7 +92,19 @@ esac
 temp_dir="$(mktemp -d)"
 trap 'rm -rf -- "${temp_dir}"' EXIT
 download "${RAW_BASE}/${ZIP}" "${temp_dir}/package.zip"
+[[ -s "${temp_dir}/package.zip" ]] || die "Downloaded package is empty."
+command -v sha256sum >/dev/null 2>&1 || die "sha256sum is required for OTA package verification."
+download "${RAW_BASE}/SHA256SUMS" "${temp_dir}/SHA256SUMS"
+expected_hash="$(awk -v file="${ZIP}" '$2 == file {print $1}' "${temp_dir}/SHA256SUMS")"
+[[ -n "${expected_hash}" ]] || die "No published checksum was found for ${ZIP}."
+actual_hash="$(sha256sum "${temp_dir}/package.zip" | awk '{print $1}')"
+[[ "${actual_hash}" == "${expected_hash}" ]] || die "SHA-256 verification failed for ${ZIP}."
+printf 'SHA-256 checksum verified for %s.\n' "${ZIP}"
 command -v unzip >/dev/null 2>&1 || die "unzip is required."
+unzip -tq "${temp_dir}/package.zip" >/dev/null || die "The downloaded ZIP failed its integrity check."
+if unzip -Z1 "${temp_dir}/package.zip" | grep -Eq '(^/|(^|/)\.\.(/|$))'; then
+  die "The ZIP contains an unsafe absolute or parent path."
+fi
 unzip_status=0
 unzip -q "${temp_dir}/package.zip" -d "${temp_dir}/package" || unzip_status=$?
 [[ ${unzip_status} -le 1 ]] || die "Package extraction failed with unzip status ${unzip_status}."
@@ -399,4 +411,3 @@ POST-UPDATE SAFETY CHECK REQUIRED
 Do not assume calibration values survived a printer.cfg replacement; restore
 known-good values from the verified backup when necessary.
 EOF
-

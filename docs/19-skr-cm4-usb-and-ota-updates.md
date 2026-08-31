@@ -83,6 +83,10 @@ If the installation marker is missing, the package ID is mandatory. This
 prevents a Neptune 3 Max/SKR system from silently receiving Neptune 3 Pro,
 Plus, Robin Nano, or other controller files.
 
+Before extracting or staging any OTA package, the updater requires the matching
+entry from the repository's `SHA256SUMS`, verifies the downloaded ZIP's SHA-256
+digest and internal integrity, and rejects absolute or parent-directory paths.
+
 The normal OTA mode updates only:
 
 - `custom/`
