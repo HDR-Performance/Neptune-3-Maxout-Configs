@@ -4,6 +4,11 @@ set -Eeuo pipefail
 REPOSITORY="HDR-Performance/Neptune-3-Maxout-Configs"
 BRANCH="${HDR_BRANCH:-main}"
 RAW_BASE="${HDR_RAW_BASE:-https://raw.githubusercontent.com/${REPOSITORY}/${BRANCH}}"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+INSTALL_RAW_BASE="${RAW_BASE}"
+if [[ "${HDR_MOONRAKER_HOOK:-0}" == 1 ]]; then
+  INSTALL_RAW_BASE="file://${REPO_ROOT}"
+fi
 CONFIG_DIR="${HDR_CONFIG_DIR:-${HOME}/printer_data/config}"
 PACKAGE_ID=""
 INCLUDE_PRINTER_CFG=0
@@ -18,6 +23,15 @@ PAD7_DETECTED_CACHE=""
 
 die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 download() { curl --fail --location --silent --show-error "$1" --output "$2"; }
+stage_repo_file() {
+  local relative="$1" destination="$2"
+  if [[ "${HDR_MOONRAKER_HOOK:-0}" == 1 ]]; then
+    [[ -f "${REPO_ROOT}/${relative}" ]] || die "OTA checkout file is missing: ${relative}"
+    cp -a "${REPO_ROOT}/${relative}" "${destination}"
+  else
+    download "${RAW_BASE}/${relative}" "${destination}"
+  fi
+}
 
 usage() {
   cat <<'EOF'
@@ -92,10 +106,10 @@ esac
 
 temp_dir="$(mktemp -d)"
 trap 'rm -rf -- "${temp_dir}"' EXIT
-download "${RAW_BASE}/${ZIP}" "${temp_dir}/package.zip"
+stage_repo_file "${ZIP}" "${temp_dir}/package.zip"
 [[ -s "${temp_dir}/package.zip" ]] || die "Downloaded package is empty."
 command -v sha256sum >/dev/null 2>&1 || die "sha256sum is required for OTA package verification."
-download "${RAW_BASE}/SHA256SUMS" "${temp_dir}/SHA256SUMS"
+stage_repo_file "SHA256SUMS" "${temp_dir}/SHA256SUMS"
 expected_hash="$(awk -v file="${ZIP}" '$2 == file {print $1}' "${temp_dir}/SHA256SUMS")"
 [[ -n "${expected_hash}" ]] || die "No published checksum was found for ${ZIP}."
 actual_hash="$(sha256sum "${temp_dir}/package.zip" | awk '{print $1}')"
@@ -239,10 +253,10 @@ run_pad7_ui_update() {
     auto) pad7_detected || { printf 'Pad 7 hardware not detected; rotation/touch settings were not changed.\n'; return 0; } ;;
     on) ;;
   esac
-  download "${RAW_BASE}/tools/install-pad7-ui.sh" "${installer}"
-  download "${RAW_BASE}/tools/hdr-pad7-rotate" "${temp_dir}/hdr-pad7-rotate"
+  stage_repo_file "tools/install-pad7-ui.sh" "${installer}"
+  stage_repo_file "tools/hdr-pad7-rotate" "${temp_dir}/hdr-pad7-rotate"
   chmod +x "${installer}" "${temp_dir}/hdr-pad7-rotate"
-  HDR_CONFIG_DIR="${CONFIG_DIR}" HDR_RAW_BASE="${RAW_BASE}" "${installer}"
+  HDR_CONFIG_DIR="${CONFIG_DIR}" HDR_RAW_BASE="${INSTALL_RAW_BASE}" "${installer}"
 }
 
 run_pad7_theme_update() {
@@ -252,9 +266,9 @@ run_pad7_theme_update() {
     auto) pad7_detected || { printf 'Pad 7 hardware not detected; theme and sound were not changed.\n'; return 0; } ;;
     on) ;;
   esac
-  download "${RAW_BASE}/tools/install-neptune-maxout-theme.sh" "${installer}"
+  stage_repo_file "tools/install-neptune-maxout-theme.sh" "${installer}"
   chmod +x "${installer}"
-  HDR_CONFIG_DIR="${CONFIG_DIR}" HDR_RAW_BASE="${RAW_BASE}" "${installer}"
+  HDR_CONFIG_DIR="${CONFIG_DIR}" HDR_RAW_BASE="${INSTALL_RAW_BASE}" "${installer}"
 }
 
 run_bed_screw_ui_update() {
@@ -264,9 +278,9 @@ run_bed_screw_ui_update() {
     auto) [[ -d "${HOME}/KlipperScreen/panels" ]] || { printf 'KlipperScreen not detected; Bed Screw Location UI skipped.\n'; return 0; } ;;
     on) [[ -d "${HOME}/KlipperScreen/panels" ]] || return 1 ;;
   esac
-  download "${RAW_BASE}/tools/install-bed-screw-location.sh" "${installer}"
+  stage_repo_file "tools/install-bed-screw-location.sh" "${installer}"
   chmod +x "${installer}"
-  HDR_CONFIG_DIR="${CONFIG_DIR}" HDR_RAW_BASE="${RAW_BASE}" "${installer}"
+  HDR_CONFIG_DIR="${CONFIG_DIR}" HDR_RAW_BASE="${INSTALL_RAW_BASE}" "${installer}"
 }
 
 detect_host_type() {
@@ -291,7 +305,7 @@ run_moonraker_kamp_update() {
     auto) [[ -f "${CONFIG_DIR}/moonraker.conf" ]] || { printf 'moonraker.conf not found; KAMP preflight skipped.\n'; return 0; } ;;
     on) [[ -f "${CONFIG_DIR}/moonraker.conf" ]] || return 1 ;;
   esac
-  download "${RAW_BASE}/tools/configure-moonraker-kamp.sh" "${installer}"
+  stage_repo_file "tools/configure-moonraker-kamp.sh" "${installer}"
   chmod +x "${installer}"
   HDR_CONFIG_DIR="${CONFIG_DIR}" "${installer}"
 }
@@ -325,7 +339,7 @@ run_skr_usb_update() {
     return 1
   fi
   installer="${temp_dir}/install-skr-usb-recovery.sh"
-  download "${RAW_BASE}/tools/install-skr-usb-recovery.sh" "${installer}"
+  stage_repo_file "tools/install-skr-usb-recovery.sh" "${installer}"
   chmod +x "${installer}"
   "${installer}" "${mcu_path}"
 }
@@ -341,7 +355,7 @@ run_moonraker_updater_registration() {
     auto) [[ -f "${CONFIG_DIR}/moonraker.conf" ]] || { printf 'moonraker.conf not found; updater registration skipped.\n'; return 0; } ;;
     on) [[ -f "${CONFIG_DIR}/moonraker.conf" ]] || return 1 ;;
   esac
-  download "${RAW_BASE}/tools/install-moonraker-update-manager.sh" "${installer}"
+  stage_repo_file "tools/install-moonraker-update-manager.sh" "${installer}"
   chmod +x "${installer}"
   HDR_CONFIG_DIR="${CONFIG_DIR}" "${installer}"
 }
@@ -349,11 +363,11 @@ run_moonraker_updater_registration() {
 run_speed_profile_update() {
   local marker_tool="${temp_dir}/prepare-speed-profile-config.py"
   local installer="${temp_dir}/install-speed-profile-service.sh"
-  download "${RAW_BASE}/tools/prepare-speed-profile-config.py" "${marker_tool}"
-  download "${RAW_BASE}/tools/install-speed-profile-service.sh" "${installer}"
+  stage_repo_file "tools/prepare-speed-profile-config.py" "${marker_tool}"
+  stage_repo_file "tools/install-speed-profile-service.sh" "${installer}"
   python3 "${marker_tool}" "${CONFIG_DIR}/printer.cfg"
   chmod +x "${installer}"
-  HDR_CONFIG_DIR="${CONFIG_DIR}" HDR_RAW_BASE="${RAW_BASE}" "${installer}"
+  HDR_CONFIG_DIR="${CONFIG_DIR}" HDR_RAW_BASE="${INSTALL_RAW_BASE}" "${installer}"
 }
 
 if ! run_pad7_ui_update; then

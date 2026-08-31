@@ -55,6 +55,12 @@ dependency-package parser, not a general post-update callback. The watcher and
 hook are installed outside Klipper, do not issue printer motion, and keep the
 Git checkout pristine. Use `--moonraker-updater off` to skip registration.
 
+The Moonraker hook stages its ZIP, checksum manifest, installers, panels, and
+theme assets from the exact commit Moonraker just checked out. This avoids a
+short-lived `raw.githubusercontent.com/main` cache mismatch immediately after a
+release. The separately downloaded `~/hdr-neptune-update.sh` continues to fetch
+the published files normally.
+
 The registrar supports `HDR_BRANCH` for maintainer testing. Normal users should
 leave it unset so the checkout and Update Manager remain pinned to `main`.
 
