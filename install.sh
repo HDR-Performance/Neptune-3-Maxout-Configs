@@ -19,6 +19,7 @@ ASSUME_YES=0
 DRY_RUN=0
 TEMP_DIR=""
 FRESH_INSTALL=0
+PAD7_DETECTED_CACHE=""
 
 cleanup() {
   if [[ -n "${TEMP_DIR}" && -d "${TEMP_DIR}" ]]; then
@@ -285,12 +286,19 @@ replace_skr_mcu_id() {
 }
 
 pad7_ui_detected() {
-  command -v systemctl >/dev/null 2>&1 || return 1
-  command -v xrandr >/dev/null 2>&1 || return 1
-  command -v xinput >/dev/null 2>&1 || return 1
-  systemctl cat KlipperScreen.service >/dev/null 2>&1 || return 1
-  DISPLAY=:0 xrandr --query 2>/dev/null | grep -q '1024x600' || return 1
-  DISPLAY=:0 xinput list --name-only 2>/dev/null | grep -Eiq 'BTT-HDMI7|ILITEK-TP' || return 1
+  if [[ -z "${PAD7_DETECTED_CACHE}" ]]; then
+    if command -v systemctl >/dev/null 2>&1 && \
+       command -v xrandr >/dev/null 2>&1 && \
+       command -v xinput >/dev/null 2>&1 && \
+       systemctl cat KlipperScreen.service >/dev/null 2>&1 && \
+       DISPLAY=:0 xrandr --query 2>/dev/null | grep -q '1024x600' && \
+       DISPLAY=:0 xinput list --name-only 2>/dev/null | grep -Eiq 'BTT-HDMI7|ILITEK-TP'; then
+      PAD7_DETECTED_CACHE=1
+    else
+      PAD7_DETECTED_CACHE=0
+    fi
+  fi
+  [[ "${PAD7_DETECTED_CACHE}" == 1 ]]
 }
 
 install_pad7_ui() {
