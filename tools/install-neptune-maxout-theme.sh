@@ -132,6 +132,8 @@ command -v systemctl >/dev/null 2>&1 || die "systemd is required."
 systemctl cat KlipperScreen.service >/dev/null 2>&1 || die "KlipperScreen.service was not found."
 [[ -d "${KS_DIR}/styles" ]] || die "KlipperScreen styles directory not found: ${KS_DIR}/styles"
 [[ -d "${SOURCE_ICON_DIR}" ]] || die "Material Dark icon directory not found: ${SOURCE_ICON_DIR}"
+THEME_OWNER="$(stat -c '%u' "${KS_DIR}/styles")"
+THEME_GROUP="$(stat -c '%g' "${KS_DIR}/styles")"
 mkdir -p "${CONFIG_DIR}"
 
 if [[ ${RESTORE_MATERIAL_DARK} -eq 1 ]]; then
@@ -172,6 +174,8 @@ rm -rf -- "${THEME_DIR}"
 mkdir -p "${THEME_DIR}/images"
 cp -a "${SOURCE_ICON_DIR}/." "${THEME_DIR}/images/"
 cp -a "${TEMP_DIR}/." "${THEME_DIR}/"
+sudo chown -R "${THEME_OWNER}:${THEME_GROUP}" "${THEME_DIR}"
+sudo chmod -R u+rwX,go+rX "${THEME_DIR}"
 apply_orientation_background
 set_theme "${THEME_NAME}"
 

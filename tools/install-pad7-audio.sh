@@ -17,6 +17,12 @@ BOOT_CHANGED=0
 IS_CM4=0
 IS_CB1=0
 TEMP_DIR=""
+SESSION_USER="${HDR_RUN_USER:-$(id -un)}"
+SESSION_UID="$(id -u "${SESSION_USER}")"
+SESSION_HOME="$(getent passwd "${SESSION_USER}" | cut -d: -f6)"
+[[ -n "${SESSION_HOME}" ]] || SESSION_HOME="${HOME}"
+SESSION_RUNTIME="/run/user/${SESSION_UID}"
+SESSION_BUS="unix:path=${SESSION_RUNTIME}/bus"
 
 cleanup() {
   [[ -z "${TEMP_DIR}" ]] || rm -rf -- "${TEMP_DIR}"
@@ -26,6 +32,22 @@ trap cleanup EXIT
 die() {
   printf 'ERROR: %s\n' "$*" >&2
   exit 1
+}
+
+run_session() {
+  if [[ "$(id -un)" != "${SESSION_USER}" ]]; then
+    command -v runuser >/dev/null 2>&1 || die "runuser is required for the ${SESSION_USER} audio session."
+    runuser -u "${SESSION_USER}" -- env \
+      HOME="${SESSION_HOME}" \
+      XDG_RUNTIME_DIR="${SESSION_RUNTIME}" \
+      DBUS_SESSION_BUS_ADDRESS="${SESSION_BUS}" \
+      "$@"
+  else
+    env HOME="${SESSION_HOME}" \
+      XDG_RUNTIME_DIR="${SESSION_RUNTIME}" \
+      DBUS_SESSION_BUS_ADDRESS="${SESSION_BUS}" \
+      "$@"
+  fi
 }
 
 download_file() {
@@ -62,7 +84,7 @@ if [[ ${IS_CM4} -eq 1 ]]; then
       pipewire pipewire-pulse wireplumber pipewire-alsa
   fi
 
-  WIREPLUMBER_DIR="${HOME}/.config/wireplumber/wireplumber.conf.d"
+  WIREPLUMBER_DIR="${SESSION_HOME}/.config/wireplumber/wireplumber.conf.d"
   WIREPLUMBER_CONFIG="${WIREPLUMBER_DIR}/51-hdr-pad7-hdmi.conf"
   mkdir -p "${WIREPLUMBER_DIR}"
   [[ ! -f "${WIREPLUMBER_CONFIG}" ]] || \
@@ -84,19 +106,20 @@ monitor.alsa.rules = [
 ]
 EOF
 
-  export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-  export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=${XDG_RUNTIME_DIR}/bus}"
-  [[ -S "${XDG_RUNTIME_DIR}/bus" ]] || die "The user D-Bus session is unavailable; log in normally and run the installer without sudo."
-  systemctl --user daemon-reload
-  systemctl --user enable --now pipewire.socket pipewire-pulse.socket
-  systemctl --user enable --now wireplumber.service
-  systemctl --user restart wireplumber.service pipewire.service pipewire-pulse.service
+  if [[ ${EUID} -eq 0 ]]; then
+    chown -R "${SESSION_USER}:$(id -gn "${SESSION_USER}")" "${SESSION_HOME}/.config/wireplumber"
+  fi
+  [[ -S "${SESSION_RUNTIME}/bus" ]] || die "The ${SESSION_USER} D-Bus session is unavailable; log in normally before refreshing CM4 audio."
+  run_session systemctl --user daemon-reload
+  run_session systemctl --user enable --now pipewire.socket pipewire-pulse.socket
+  run_session systemctl --user enable --now wireplumber.service
+  run_session systemctl --user restart wireplumber.service pipewire.service pipewire-pulse.service
   sleep 3
 
-  HDMI_SINK_ID="$(wpctl status -n 2>/dev/null | sed -nE '/alsa_output.*hdmi.*hdmi-stereo/ {s/.*[[:space:]]([0-9]+)\.[[:space:]].*/\1/p; q;}')"
+  HDMI_SINK_ID="$(run_session wpctl status -n 2>/dev/null | sed -nE '/alsa_output.*hdmi.*hdmi-stereo/ {s/.*[[:space:]]([0-9]+)\.[[:space:]].*/\1/p; q;}')"
   [[ -n "${HDMI_SINK_ID}" ]] || die "PipeWire started, but the Pad 7 HDMI sink was not found."
-  wpctl set-default "${HDMI_SINK_ID}"
-  wpctl set-volume @DEFAULT_AUDIO_SINK@ 1.0
+  run_session wpctl set-default "${HDMI_SINK_ID}"
+  run_session wpctl set-volume @DEFAULT_AUDIO_SINK@ 1.0
 else
   command -v aplay >/dev/null 2>&1 || die "CB1 audio requires aplay from the alsa-utils package."
 fi
