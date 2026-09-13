@@ -1,0 +1,62 @@
+{
+    "compatible_printers": [
+        "Maxout FlowTech 0.6 nozzle",
+        "Maxout FlowTech 0.8 nozzle",
+        "Maxout FlowTech 1.0 nozzle"
+    ],
+    "default_filament_colour": [
+        "#FFFFFF"
+    ],
+    "fan_max_speed": [
+        "0"
+    ],
+    "fan_min_speed": [
+        "0"
+    ],
+    "filament_extruder_variant": [
+        "Direct Drive Standard"
+    ],
+    "filament_max_volumetric_speed": [
+        "10"
+    ],
+    "filament_notes": [
+        "Maxout + Micro Swiss FlowTech starting point. REQUIRES a hardened abrasion-resistant FlowTech-compatible nozzle, 0.6 mm or larger. Dry filament and print from a dry box when appropriate. Calibrate temperature, max flow, flow ratio, pressure advance, and retraction for this spool."
+    ],
+    "filament_settings_id": [
+        "Maxout Polymaker Fiberon PA6-CF20"
+    ],
+    "filament_type": [
+        "PA-CF"
+    ],
+    "filament_vendor": [
+        "Polymaker"
+    ],
+    "from": "User",
+    "hot_plate_temp": [
+        "50"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "50"
+    ],
+    "inherits": "Generic PA-CF @System",
+    "name": "Maxout Polymaker Fiberon PA6-CF20",
+    "nozzle_temperature": [
+        "290"
+    ],
+    "nozzle_temperature_initial_layer": [
+        "290"
+    ],
+    "nozzle_temperature_range_high": [
+        "300"
+    ],
+    "nozzle_temperature_range_low": [
+        "270"
+    ],
+    "textured_plate_temp": [
+        "50"
+    ],
+    "textured_plate_temp_initial_layer": [
+        "50"
+    ],
+    "version": "1.9.0.2"
+}

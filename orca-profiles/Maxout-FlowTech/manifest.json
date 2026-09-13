@@ -1,0 +1,14 @@
+{
+    "profile_family": "Maxout + Micro Swiss FlowTech",
+    "generated_printer_profiles": 4,
+    "generated_process_profiles": 20,
+    "generated_filament_profiles": 47,
+    "flowtech_hardware_ceiling_mm3_s": 50,
+    "validation_required": [
+        "temperature tower",
+        "max volumetric flow",
+        "flow ratio",
+        "pressure advance",
+        "retraction"
+    ]
+}

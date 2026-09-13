@@ -1,0 +1,63 @@
+{
+    "compatible_printers": [
+        "Maxout FlowTech 0.4 nozzle",
+        "Maxout FlowTech 0.6 nozzle",
+        "Maxout FlowTech 0.8 nozzle",
+        "Maxout FlowTech 1.0 nozzle"
+    ],
+    "default_filament_colour": [
+        "#FFFFFF"
+    ],
+    "fan_max_speed": [
+        "100"
+    ],
+    "fan_min_speed": [
+        "100"
+    ],
+    "filament_extruder_variant": [
+        "Direct Drive Standard"
+    ],
+    "filament_max_volumetric_speed": [
+        "25"
+    ],
+    "filament_notes": [
+        "Maxout + Micro Swiss FlowTech starting point. Calibrate temperature, max flow, flow ratio, pressure advance, and retraction for this spool."
+    ],
+    "filament_settings_id": [
+        "Maxout Polymaker PolySonic PLA Pro"
+    ],
+    "filament_type": [
+        "PLA"
+    ],
+    "filament_vendor": [
+        "Polymaker"
+    ],
+    "from": "User",
+    "hot_plate_temp": [
+        "60"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "60"
+    ],
+    "inherits": "Creality Generic PLA",
+    "name": "Maxout Polymaker PolySonic PLA Pro",
+    "nozzle_temperature": [
+        "230"
+    ],
+    "nozzle_temperature_initial_layer": [
+        "230"
+    ],
+    "nozzle_temperature_range_high": [
+        "240"
+    ],
+    "nozzle_temperature_range_low": [
+        "210"
+    ],
+    "textured_plate_temp": [
+        "60"
+    ],
+    "textured_plate_temp_initial_layer": [
+        "60"
+    ],
+    "version": "1.9.0.2"
+}

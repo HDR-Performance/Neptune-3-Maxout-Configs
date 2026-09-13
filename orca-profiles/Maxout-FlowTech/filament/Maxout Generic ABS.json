@@ -1,0 +1,63 @@
+{
+    "compatible_printers": [
+        "Maxout FlowTech 0.4 nozzle",
+        "Maxout FlowTech 0.6 nozzle",
+        "Maxout FlowTech 0.8 nozzle",
+        "Maxout FlowTech 1.0 nozzle"
+    ],
+    "default_filament_colour": [
+        "#FFFFFF"
+    ],
+    "fan_max_speed": [
+        "15"
+    ],
+    "fan_min_speed": [
+        "0"
+    ],
+    "filament_extruder_variant": [
+        "Direct Drive Standard"
+    ],
+    "filament_max_volumetric_speed": [
+        "17"
+    ],
+    "filament_notes": [
+        "Maxout + Micro Swiss FlowTech starting point. REQUIRES an enclosure and suitable ventilation. Dry filament and print from a dry box when appropriate. Calibrate temperature, max flow, flow ratio, pressure advance, and retraction for this spool."
+    ],
+    "filament_settings_id": [
+        "Maxout Generic ABS"
+    ],
+    "filament_type": [
+        "ABS"
+    ],
+    "filament_vendor": [
+        "Maxout"
+    ],
+    "from": "User",
+    "hot_plate_temp": [
+        "100"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "100"
+    ],
+    "inherits": "Creality Generic ABS",
+    "name": "Maxout Generic ABS",
+    "nozzle_temperature": [
+        "265"
+    ],
+    "nozzle_temperature_initial_layer": [
+        "265"
+    ],
+    "nozzle_temperature_range_high": [
+        "275"
+    ],
+    "nozzle_temperature_range_low": [
+        "245"
+    ],
+    "textured_plate_temp": [
+        "100"
+    ],
+    "textured_plate_temp_initial_layer": [
+        "100"
+    ],
+    "version": "1.9.0.2"
+}

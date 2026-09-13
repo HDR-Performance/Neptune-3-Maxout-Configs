@@ -1,0 +1,81 @@
+{
+    "bed_custom_texture": "\\\\\\\\TRUENAS\\\\David\\\\3D Printing\\\\Neptune 3 Maxout\\\\Maxout Orca.png",
+    "from": "User",
+    "gcode_flavor": "klipper",
+    "inherits": "Elegoo Elegoo Neptune Maxout 0.4 nozzle",
+    "machine_end_gcode": "; End G-code for Neptune 3 Max with Klipper and KAMP in Orca Slicer\nM117 Finishing print\n\n; Turn off heaters\nM104 S0                        ; Turn off extruder\nM140 S0                        ; Turn off bed\n\n; Lift Z and move to present print at Y=313\nG91                            ; Relative positioning\nG1 Z10 F600                    ; Lift Z by 10 mm\nG90                            ; Absolute positioning\nG0 X0 Y313 F12000              ; Move to X=0, Y=313 (present print)\n\n; Disable motors and clear mesh\nM84                            ; Disable steppers\nBED_MESH_CLEAR                 ; Clear adaptive mesh for next print\n\n; Turn off LED\nSET_LED LED=LED_Light WHITE=0 SYNC=0 TRANSMIT=1\n\n; Optional: Wake screen (uncomment if using SCREEN_WAKE)\n; SCREEN_WAKE\n\nM117 Print complete!",
+    "machine_max_acceleration_e": [
+        "3000",
+        "5000"
+    ],
+    "machine_max_acceleration_extruding": [
+        "3000",
+        "500"
+    ],
+    "machine_max_acceleration_retracting": [
+        "4000",
+        "1000"
+    ],
+    "machine_max_acceleration_x": [
+        "5000",
+        "500"
+    ],
+    "machine_max_acceleration_y": [
+        "5000",
+        "500"
+    ],
+    "machine_max_acceleration_z": [
+        "300",
+        "100"
+    ],
+    "machine_max_jerk_x": [
+        "15",
+        "8"
+    ],
+    "machine_max_jerk_y": [
+        "15",
+        "8"
+    ],
+    "machine_max_jerk_z": [
+        "0.6",
+        "0.4"
+    ],
+    "machine_max_speed_e": [
+        "120",
+        "60"
+    ],
+    "machine_max_speed_x": [
+        "650",
+        "500"
+    ],
+    "machine_max_speed_y": [
+        "650",
+        "500"
+    ],
+    "machine_max_speed_z": [
+        "25",
+        "10"
+    ],
+    "machine_start_gcode": "START_PRINT BED_TEMP=[first_layer_bed_temperature] EXTRUDER_TEMP=[first_layer_temperature]",
+    "name": "Maxout FlowTech 0.6 nozzle",
+    "print_host": "192.168.0.160",
+    "printable_height": "500",
+    "printer_extruder_id": [
+        "1"
+    ],
+    "printer_extruder_variant": [
+        "Direct Drive Standard"
+    ],
+    "printer_settings_id": "Maxout FlowTech 0.6 nozzle",
+    "version": "2.3.1.10",
+    "nozzle_diameter": [
+        "0.6"
+    ],
+    "printer_variant": "0.6",
+    "max_layer_height": [
+        "0.48"
+    ],
+    "min_layer_height": [
+        "0.08"
+    ]
+}

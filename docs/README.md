@@ -17,7 +17,7 @@ This documentation consolidates the useful material from the two original HDR Pe
 4. [Commission the printer safely](05-commissioning-checklist.md)
 5. [Configure KAMP](06-kamp-setup.md)
 6. [Calibrate input shaper with the Pad 7](07-input-shaper.md)
-7. [Configure the slicer](08-slicer-gcode.md)
+7. [Configure the slicer](08-slicer-gcode.md), then optionally install the [Maxout FlowTech OrcaSlicer profile pack](ORCASLICER-FLOWTECH-PROFILES.md).
 8. [Learn the added macros and controls](09-feature-guide.md)
 9. Choose the matching host guide:
    - [Raspberry Pi 4 or generic CM4 Klipper host](13-raspberry-pi4-cm4-klipper-host.md)
