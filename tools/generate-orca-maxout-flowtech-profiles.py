@@ -23,6 +23,14 @@ NOZZLES = {
 
 LAYER_HEIGHTS = (0.10, 0.15, 0.20, 0.30, 0.32)
 
+LAYER_INTENTS = {
+    0.10: {"label": "Precision", "speed": 0.65, "resolution": 0.008},
+    0.15: {"label": "Fine", "speed": 0.82, "resolution": 0.010},
+    0.20: {"label": "Balanced", "speed": 1.00, "resolution": 0.012},
+    0.30: {"label": "Fast", "speed": 1.08, "resolution": 0.016},
+    0.32: {"label": "Draft", "speed": 1.12, "resolution": 0.020},
+}
+
 def material(name, family, nozzle, bed, flow, fan_min, fan_max, *, abrasive=False,
              enclosure=False, dry=False, vendor="Maxout"):
     return {
@@ -90,11 +98,11 @@ FILAMENTS = (
 )
 
 INHERITS = {
-    "PLA": "Creality Generic PLA", "PLA-CF": "Creality Generic PLA",
-    "PETG": "Creality Generic PETG", "PETG-CF": "Creality Generic PETG",
-    "ABS": "Creality Generic ABS", "ASA": "Creality Generic ASA",
+    "PLA": "Generic PLA @System", "PLA-CF": "Generic PLA-CF @System",
+    "PETG": "Generic PETG @System", "PETG-CF": "Generic PETG-CF @System",
+    "ABS": "Generic ABS @System", "ASA": "Generic ASA @System",
     "PC": "Generic PC @System", "PA": "Generic PA @System",
-    "PA-CF": "Generic PA-CF @System", "TPU": "Creality Generic TPU",
+    "PA-CF": "Generic PA-CF @System", "TPU": "Generic TPU @System",
 }
 
 
@@ -105,18 +113,43 @@ def write_json(path: Path, payload: dict) -> None:
 
 
 def generate(source_root: Path, output_root: Path) -> None:
+    for category in ("machine", "process"):
+        for old_profile in (output_root / category).glob("Maxout FlowTech*.json"):
+            old_profile.unlink()
     machine_source = source_root / "machine" / "Elegoo Elegoo Neptune Maxout 0.4 nozzle.json"
     process_source = source_root / "process" / "Maxout 0.4 nozzle 0.20 Basic.json"
-    machine_base = json.loads(machine_source.read_text(encoding="utf-8"))
-    process_base = json.loads(process_source.read_text(encoding="utf-8"))
+    machine_template_source = source_root / "machine" / "base" / "Elegoo Elegoo Neptune 3 Max 0.4 nozzle.json"
+    process_template_source = source_root / "process" / "base" / "process template @Elegoo Elegoo Neptune 3 Max 0.4 nozzle.json"
+    machine_template = json.loads(machine_template_source.read_text(encoding="utf-8"))
+    machine_overlay = json.loads(machine_source.read_text(encoding="utf-8"))
+    process_template = json.loads(process_template_source.read_text(encoding="utf-8"))
+    process_overlay = json.loads(process_source.read_text(encoding="utf-8"))
+    # Flatten the local inheritance chain so the published presets do not depend
+    # on any unpublished user preset being present on another computer.
+    machine_base = {**machine_template, **machine_overlay}
+    process_base = {**process_template, **process_overlay}
+
+    for private_key in (
+        "bed_custom_model", "bed_custom_texture", "print_host", "print_host_webui",
+        "printhost_apikey", "printhost_cafile", "printhost_password", "printhost_port",
+        "printhost_user",
+    ):
+        machine_base[private_key] = ""
 
     for nozzle, speeds in NOZZLES.items():
         machine_name = f"Maxout FlowTech {nozzle} nozzle"
         machine = dict(machine_base)
         machine.update(
             {
-                "inherits": "Elegoo Elegoo Neptune Maxout 0.4 nozzle",
+                "inherits": "",
+                "from": "User",
+                "gcode_flavor": "klipper",
+                "machine_end_gcode": "END_PRINT",
+                "machine_start_gcode": "START_PRINT BED_TEMP=[bed_temperature_initial_layer_single] EXTRUDER_TEMP=[nozzle_temperature_initial_layer]",
+                "default_filament_profile": ["Maxout Generic PLA"],
+                "default_print_profile": f"Maxout FlowTech {nozzle} - 0.20 Balanced",
                 "name": machine_name,
+                "nozzle_type": "undefine",
                 "nozzle_diameter": [nozzle],
                 "printer_settings_id": machine_name,
                 "printer_variant": nozzle,
@@ -128,32 +161,58 @@ def generate(source_root: Path, output_root: Path) -> None:
 
         for layer in LAYER_HEIGHTS:
             layer_text = f"{layer:.2f}"
-            process_name = f"Maxout FlowTech {nozzle} - {layer_text} Basic"
+            intent = LAYER_INTENTS[layer]
+            process_name = f"Maxout FlowTech {nozzle} - {layer_text} {intent['label']}"
             line = speeds["line"]
-            first_layer_height = max(0.20, layer)
+            speed_factor = intent["speed"]
+            first_layer_height = max(layer, min(0.30, float(nozzle) * 0.5))
+            layer_ratio = layer / float(nozzle)
+            maturity = "local-baseline" if nozzle == "0.4" and layer == 0.20 else "candidate"
+            geometry_warning = " Experimental thin-layer geometry; validate adhesion and line consistency." if layer_ratio < 0.20 else ""
             process = dict(process_base)
             process.update(
                 {
                     "compatible_printers": [machine_name],
-                    "inherits": "Maxout 0.4 nozzle 0.20 Basic",
+                    "inherits": "",
+                    "from": "User",
+                    "notes": f"Maxout FlowTech profile maturity: {maturity}.{geometry_warning} Filament MVS remains the extrusion-speed limiter.",
+                    "enable_support": "0",
+                    "exclude_object": "1",
+                    "gcode_label_objects": "1",
+                    "detect_overhang_wall": "1",
+                    "slowdown_for_curled_perimeters": "1",
+                    "precise_outer_wall": "1",
+                    "wall_loops": "3",
+                    "wall_sequence": "inner wall/outer wall",
+                    "seam_position": "aligned",
+                    "sparse_infill_density": "15%",
+                    "sparse_infill_pattern": "crosshatch",
+                    "top_surface_pattern": "monotonicline",
+                    "bottom_surface_pattern": "monotonic",
+                    "top_shell_thickness": f"{max(0.8, layer * 4):.2f}",
+                    "bottom_shell_thickness": f"{max(0.6, layer * 3):.2f}",
+                    "resolution": f"{intent['resolution']:.3f}",
                     "initial_layer_line_width": f"{line * 1.08:.2f}",
                     "initial_layer_print_height": f"{first_layer_height:.2f}",
                     "inner_wall_line_width": f"{line:.2f}",
-                    "inner_wall_speed": str(speeds["inner"]),
+                    "inner_wall_speed": str(round(speeds["inner"] * speed_factor)),
                     "internal_solid_infill_line_width": f"{line:.2f}",
-                    "internal_solid_infill_speed": str(speeds["solid"]),
+                    "internal_solid_infill_speed": str(round(speeds["solid"] * speed_factor)),
                     "layer_height": layer_text,
                     "line_width": f"{line:.2f}",
                     "name": process_name,
                     "outer_wall_line_width": f"{line:.2f}",
-                    "outer_wall_speed": str(speeds["outer"]),
+                    "outer_wall_speed": str(round(speeds["outer"] * speed_factor)),
                     "print_settings_id": process_name,
                     "sparse_infill_line_width": f"{line:.2f}",
-                    "sparse_infill_speed": str(speeds["infill"]),
+                    "sparse_infill_speed": str(round(speeds["infill"] * speed_factor)),
                     "support_line_width": f"{line:.2f}",
-                    "support_speed": str(speeds["support"]),
+                    "support_speed": str(round(speeds["support"] * speed_factor)),
+                    "support_interface_speed": str(max(30, round(speeds["support"] * speed_factor * 0.75))),
+                    "support_top_z_distance": layer_text,
+                    "support_bottom_z_distance": layer_text,
                     "top_surface_line_width": f"{line:.2f}",
-                    "top_surface_speed": str(max(45, speeds["outer"] - 15)),
+                    "top_surface_speed": str(max(30, round((speeds["outer"] - 15) * speed_factor))),
                     "travel_speed": str(speeds["travel"]),
                 }
             )
@@ -200,11 +259,14 @@ def generate(source_root: Path, output_root: Path) -> None:
 
     manifest = {
         "profile_family": "Maxout + Micro Swiss FlowTech",
+        "profile_pack_version": "0.2.0-beta",
+        "hardware_contract": "Neptune 3 Max; SKR 3 EZ; upgraded X/Y motors; direct drive; Klipper; Micro Swiss FlowTech",
         "generated_printer_profiles": len(NOZZLES),
         "generated_process_profiles": len(NOZZLES) * len(LAYER_HEIGHTS),
         "generated_filament_profiles": len(FILAMENTS),
         "flowtech_hardware_ceiling_mm3_s": 50,
-        "validation_required": ["temperature tower", "max volumetric flow", "flow ratio", "pressure advance", "retraction"],
+        "maturity": {"0.4/0.20": "local-baseline", "all_other_processes": "candidate", "filaments": "candidate"},
+        "validation_required": ["temperature tower", "max volumetric flow", "flow ratio", "pressure advance", "retraction", "dimensional test", "overhang/bridge test", "representative long print"],
     }
     write_json(output_root / "manifest.json", manifest)
 
@@ -213,6 +275,9 @@ def install(output_root: Path, install_root: Path) -> None:
     for category in ("machine", "process", "filament"):
         destination = install_root / category
         destination.mkdir(parents=True, exist_ok=True)
+        if category in ("machine", "process"):
+            for old_profile in destination.glob("Maxout FlowTech*.json"):
+                old_profile.unlink()
         for source in (output_root / category).glob("*.json"):
             shutil.copy2(source, destination / source.name)
 

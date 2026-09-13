@@ -38,7 +38,7 @@
     "hot_plate_temp_initial_layer": [
         "80"
     ],
-    "inherits": "Creality Generic PETG",
+    "inherits": "Generic PETG @System",
     "name": "Maxout Polymaker Fiberon PETG-ESD",
     "nozzle_temperature": [
         "255"

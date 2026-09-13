@@ -38,7 +38,7 @@
     "hot_plate_temp_initial_layer": [
         "80"
     ],
-    "inherits": "Creality Generic PETG",
+    "inherits": "Generic PETG-CF @System",
     "name": "Maxout Bambu PETG-CF",
     "nozzle_temperature": [
         "265"

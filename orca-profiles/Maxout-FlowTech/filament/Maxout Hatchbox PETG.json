@@ -39,7 +39,7 @@
     "hot_plate_temp_initial_layer": [
         "80"
     ],
-    "inherits": "Creality Generic PETG",
+    "inherits": "Generic PETG @System",
     "name": "Maxout Hatchbox PETG",
     "nozzle_temperature": [
         "245"

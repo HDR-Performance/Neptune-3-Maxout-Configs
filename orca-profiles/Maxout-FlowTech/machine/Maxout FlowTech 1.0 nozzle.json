@@ -1,9 +1,59 @@
 {
-    "bed_custom_texture": "\\\\\\\\TRUENAS\\\\David\\\\3D Printing\\\\Neptune 3 Maxout\\\\Maxout Orca.png",
+    "adaptive_bed_mesh_margin": "0",
+    "auxiliary_fan": "0",
+    "bbl_use_printhost": "0",
+    "bed_custom_model": "",
+    "bed_custom_texture": "",
+    "bed_exclude_area": [
+        "0x0"
+    ],
+    "bed_mesh_max": "99999,99999",
+    "bed_mesh_min": "-99999,-99999",
+    "bed_mesh_probe_distance": "50,50",
+    "before_layer_change_gcode": ";BEFORE_LAYER_CHANGE\nG92 E0\n;[layer_z]\n\n",
+    "best_object_pos": "0.5,0.5",
+    "change_extrusion_role_gcode": "",
+    "change_filament_gcode": "M600",
+    "cooling_tube_length": "5",
+    "cooling_tube_retraction": "91.5",
+    "default_bed_type": "",
+    "default_filament_profile": [
+        "Maxout Generic PLA"
+    ],
+    "default_print_profile": "Maxout FlowTech 1.0 - 0.20 Balanced",
+    "deretraction_speed": [
+        "0"
+    ],
+    "disable_m73": "0",
+    "emit_machine_limits_to_gcode": "1",
+    "enable_filament_ramming": "1",
+    "enable_long_retraction_when_cut": "0",
+    "extra_loading_move": "-2",
+    "extruder_clearance_height_to_lid": "34",
+    "extruder_clearance_height_to_rod": "34",
+    "extruder_clearance_radius": "47",
+    "extruder_colour": [
+        "#FCE94F"
+    ],
+    "extruder_offset": [
+        "0x0"
+    ],
+    "fan_kickstart": "0",
+    "fan_speedup_overhangs": "1",
+    "fan_speedup_time": "0",
     "from": "User",
     "gcode_flavor": "klipper",
-    "inherits": "Elegoo Elegoo Neptune Maxout 0.4 nozzle",
-    "machine_end_gcode": "; End G-code for Neptune 3 Max with Klipper and KAMP in Orca Slicer\nM117 Finishing print\n\n; Turn off heaters\nM104 S0                        ; Turn off extruder\nM140 S0                        ; Turn off bed\n\n; Lift Z and move to present print at Y=313\nG91                            ; Relative positioning\nG1 Z10 F600                    ; Lift Z by 10 mm\nG90                            ; Absolute positioning\nG0 X0 Y313 F12000              ; Move to X=0, Y=313 (present print)\n\n; Disable motors and clear mesh\nM84                            ; Disable steppers\nBED_MESH_CLEAR                 ; Clear adaptive mesh for next print\n\n; Turn off LED\nSET_LED LED=LED_Light WHITE=0 SYNC=0 TRANSMIT=1\n\n; Optional: Wake screen (uncomment if using SCREEN_WAKE)\n; SCREEN_WAKE\n\nM117 Print complete!",
+    "head_wrap_detect_zone": [],
+    "high_current_on_filament_swap": "0",
+    "host_type": "octoprint",
+    "inherits": "",
+    "is_custom_defined": "0",
+    "layer_change_gcode": ";AFTER_LAYER_CHANGE\n;[layer_z]",
+    "long_retractions_when_cut": [
+        "0"
+    ],
+    "machine_end_gcode": "END_PRINT",
+    "machine_load_filament_time": "0",
     "machine_max_acceleration_e": [
         "3000",
         "5000"
@@ -15,6 +65,10 @@
     "machine_max_acceleration_retracting": [
         "4000",
         "1000"
+    ],
+    "machine_max_acceleration_travel": [
+        "500",
+        "500"
     ],
     "machine_max_acceleration_x": [
         "5000",
@@ -28,6 +82,10 @@
         "300",
         "100"
     ],
+    "machine_max_jerk_e": [
+        "5",
+        "5"
+    ],
     "machine_max_jerk_x": [
         "15",
         "8"
@@ -39,6 +97,10 @@
     "machine_max_jerk_z": [
         "0.6",
         "0.4"
+    ],
+    "machine_max_junction_deviation": [
+        "0",
+        "0"
     ],
     "machine_max_speed_e": [
         "120",
@@ -56,26 +118,134 @@
         "25",
         "10"
     ],
-    "machine_start_gcode": "START_PRINT BED_TEMP=[first_layer_bed_temperature] EXTRUDER_TEMP=[first_layer_temperature]",
+    "machine_min_extruding_rate": [
+        "0",
+        "0"
+    ],
+    "machine_min_travel_rate": [
+        "0",
+        "0"
+    ],
+    "machine_pause_gcode": "M0",
+    "machine_start_gcode": "START_PRINT BED_TEMP=[bed_temperature_initial_layer_single] EXTRUDER_TEMP=[nozzle_temperature_initial_layer]",
+    "machine_tool_change_time": "0",
+    "machine_unload_filament_time": "0",
+    "manual_filament_change": "0",
+    "max_layer_height": [
+        "0.8"
+    ],
+    "max_resonance_avoidance_speed": "120",
+    "min_layer_height": [
+        "0.08"
+    ],
+    "min_resonance_avoidance_speed": "70",
     "name": "Maxout FlowTech 1.0 nozzle",
-    "print_host": "192.168.0.160",
+    "nozzle_diameter": [
+        "1.0"
+    ],
+    "nozzle_height": "2.5",
+    "nozzle_hrc": "0",
+    "nozzle_type": "undefine",
+    "nozzle_volume": "0",
+    "parking_pos_retraction": "92",
+    "pellet_modded_printer": "0",
+    "preferred_orientation": "0",
+    "print_host": "",
+    "print_host_webui": "",
+    "printable_area": [
+        "0x0",
+        "420x0",
+        "420x480",
+        "0x480"
+    ],
     "printable_height": "500",
+    "printer_model": "Elegoo Elegoo Neptune 3 Max",
+    "printer_notes": "",
+    "printer_settings_id": "Maxout FlowTech 1.0 nozzle",
+    "printer_structure": "undefine",
+    "printer_technology": "FFF",
+    "printer_variant": "1.0",
+    "printhost_apikey": "",
+    "printhost_authorization_type": "key",
+    "printhost_cafile": "",
+    "printhost_password": "",
+    "printhost_port": "",
+    "printhost_ssl_ignore_revoke": "0",
+    "printhost_user": "",
+    "printing_by_object_gcode": "",
+    "purge_in_prime_tower": "1",
+    "resonance_avoidance": "0",
+    "retract_before_wipe": [
+        "85%"
+    ],
+    "retract_length_toolchange": [
+        "2"
+    ],
+    "retract_lift_above": [
+        "0"
+    ],
+    "retract_lift_below": [
+        "0"
+    ],
+    "retract_lift_enforce": [
+        "All Surfaces"
+    ],
+    "retract_restart_extra": [
+        "0"
+    ],
+    "retract_restart_extra_toolchange": [
+        "0"
+    ],
+    "retract_when_changing_layer": [
+        "1"
+    ],
+    "retraction_distances_when_cut": [
+        "18"
+    ],
+    "retraction_length": [
+        "2.5"
+    ],
+    "retraction_minimum_travel": [
+        "1"
+    ],
+    "retraction_speed": [
+        "25"
+    ],
+    "scan_first_layer": "0",
+    "silent_mode": "0",
+    "single_extruder_multi_material": "1",
+    "support_air_filtration": "1",
+    "support_chamber_temp_control": "1",
+    "support_multi_bed_types": "0",
+    "template_custom_gcode": "",
+    "thumbnails": "48x48/PNG,300x300/PNG",
+    "thumbnails_format": "PNG",
+    "time_cost": "0",
+    "time_lapse_gcode": "",
+    "travel_slope": [
+        "3"
+    ],
+    "upward_compatible_machine": [],
+    "use_firmware_retraction": "0",
+    "use_relative_e_distances": "1",
+    "version": "2.3.1.10",
+    "wipe": [
+        "1"
+    ],
+    "wipe_distance": [
+        "1"
+    ],
+    "z_hop": [
+        "0.4"
+    ],
+    "z_hop_types": [
+        "Slope Lift"
+    ],
+    "z_offset": "0",
     "printer_extruder_id": [
         "1"
     ],
     "printer_extruder_variant": [
         "Direct Drive Standard"
-    ],
-    "printer_settings_id": "Maxout FlowTech 1.0 nozzle",
-    "version": "2.3.1.10",
-    "nozzle_diameter": [
-        "1.0"
-    ],
-    "printer_variant": "1.0",
-    "max_layer_height": [
-        "0.8"
-    ],
-    "min_layer_height": [
-        "0.08"
     ]
 }

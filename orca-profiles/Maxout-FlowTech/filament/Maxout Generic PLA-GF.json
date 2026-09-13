@@ -38,7 +38,7 @@
     "hot_plate_temp_initial_layer": [
         "60"
     ],
-    "inherits": "Creality Generic PLA",
+    "inherits": "Generic PLA @System",
     "name": "Maxout Generic PLA-GF",
     "nozzle_temperature": [
         "235"

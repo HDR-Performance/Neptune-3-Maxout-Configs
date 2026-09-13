@@ -1,14 +1,24 @@
 {
     "profile_family": "Maxout + Micro Swiss FlowTech",
+    "profile_pack_version": "0.2.0-beta",
+    "hardware_contract": "Neptune 3 Max; SKR 3 EZ; upgraded X/Y motors; direct drive; Klipper; Micro Swiss FlowTech",
     "generated_printer_profiles": 4,
     "generated_process_profiles": 20,
     "generated_filament_profiles": 47,
     "flowtech_hardware_ceiling_mm3_s": 50,
+    "maturity": {
+        "0.4/0.20": "local-baseline",
+        "all_other_processes": "candidate",
+        "filaments": "candidate"
+    },
     "validation_required": [
         "temperature tower",
         "max volumetric flow",
         "flow ratio",
         "pressure advance",
-        "retraction"
+        "retraction",
+        "dimensional test",
+        "overhang/bridge test",
+        "representative long print"
     ]
 }

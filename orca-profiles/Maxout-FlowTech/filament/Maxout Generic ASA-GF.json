@@ -38,7 +38,7 @@
     "hot_plate_temp_initial_layer": [
         "100"
     ],
-    "inherits": "Creality Generic ASA",
+    "inherits": "Generic ASA @System",
     "name": "Maxout Generic ASA-GF",
     "nozzle_temperature": [
         "275"

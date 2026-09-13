@@ -8,7 +8,7 @@ This profile pack supplies separate printer, process, and filament layers:
 
 The process profiles reduce commanded motion speed as nozzle cross-section grows. OrcaSlicer's filament maximum-volumetric-speed setting remains the final extrusion limiter. The FlowTech CHT hardware can reach up to 50 mm3/s under suitable conditions, but the included filament defaults remain well below that ceiling.
 
-These are starting profiles, not universal spool calibrations. For every new material or color, run the following in order:
+These are starting profiles, not universal spool calibrations. Profile maturity is tracked as `candidate`, `local-baseline`, or `production validated`; see the [validation protocol](ORCA-PROFILE-VALIDATION-PROTOCOL.md). For every new material or color, run the following in order:
 
 1. Dry the filament according to its manufacturer guidance.
 2. Temperature tower at the intended speed.
@@ -42,3 +42,10 @@ python tools/generate-orca-maxout-flowtech-profiles.py `
 ```
 
 Restart OrcaSlicer after installation so its preset registry is rebuilt.
+
+Validate the generated pack before publication:
+
+```powershell
+python tools/validate-orca-maxout-flowtech-profiles.py `
+  ".\orca-profiles\Maxout-FlowTech"
+```

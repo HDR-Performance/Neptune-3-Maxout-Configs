@@ -39,7 +39,7 @@
     "hot_plate_temp_initial_layer": [
         "45"
     ],
-    "inherits": "Creality Generic TPU",
+    "inherits": "Generic TPU @System",
     "name": "Maxout Generic TPU 95A",
     "nozzle_temperature": [
         "240"
