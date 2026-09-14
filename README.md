@@ -43,6 +43,9 @@ The legacy tutorials have been rebuilt as a structured, corrected documentation 
 - [Calibrate input shaper with the BTT Pad 7](docs/07-input-shaper.md)
 - [Set up OrcaSlicer or Cura](docs/08-slicer-gcode.md)
 - [Install the Maxout FlowTech OrcaSlicer profile pack](docs/ORCASLICER-FLOWTECH-PROFILES.md)
+- **[Download and easily install the Maxout FlowTech OrcaSlicer profiles](docs/ORCASLICER-FLOWTECH-EASY-INSTALL.md)**
+
+The current public beta is available as a ready-to-install ZIP: **[download Maxout FlowTech Orca Profiles 0.2.0 Beta](https://github.com/HDR-Performance/Neptune-3-Maxout-Configs/releases/download/orca-profiles-v0.2.0-beta/Maxout-FlowTech-Orca-Profiles-0.2.0-beta.zip)**.
 - [Use the HDR macro features](docs/09-feature-guide.md)
 - [Upgrade the Neptune 3 Max X/Y motors](docs/10-stepper-motor-upgrade.md)
 - [Repair Moonraker and troubleshoot the printer](docs/11-troubleshooting.md)

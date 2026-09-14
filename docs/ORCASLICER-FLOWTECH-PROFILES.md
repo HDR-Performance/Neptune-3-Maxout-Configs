@@ -1,5 +1,7 @@
 # OrcaSlicer Maxout + Micro Swiss FlowTech profiles
 
+> **New user?** Use the [download and easy Windows installation tutorial](ORCASLICER-FLOWTECH-EASY-INSTALL.md). The release ZIP includes a double-click installer and manual fallback instructions.
+
 This profile pack supplies separate printer, process, and filament layers:
 
 - Printer presets: FlowTech 0.4, 0.6, 0.8, and 1.0 mm nozzles.
